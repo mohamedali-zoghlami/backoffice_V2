@@ -17,8 +17,8 @@
                 <div class="card tasks-box mx-2 border-primary custom-border">
                     <div class="card-body ">
                         <div class="d-flex mb-2">
-                            <h6 class="fs-15 mb-0 flex-grow-1 text-truncate task-title">
-                                @if($sub->source!=="publique")<button class="text-primary text-decoration-underline fw-bold mb-0 btn p-0" type="button" onclick="handleClickk1({{json_encode($sub)}})">{{$sub->name}}</button>@else <div class="text-primary fw-bold mb-0 p-0">{{$sub->name}}</div> @endif
+                            <h6 class="fs-15 mb-0 flex-grow-1 text-break task-title">
+                                @if($sub->source!=="publique")<button class="text-primary text-decoration-underline  text-start fw-bold mb-0 btn p-0" type="button" onclick="handleClickk1({{json_encode($sub)}})">{{$sub->name}}</button>@else <div class="text-primary text-start fw-bold mb-0 p-0">{{$sub->name}}</div> @endif
                            </h6>
 
                         </div>
@@ -64,8 +64,8 @@
                 <div class="card tasks-box mx-2 border-warning custom-border">
                     <div class="card-body ">
                         <div class="d-flex mb-2">
-                            <h6 class="fs-15 mb-0 flex-grow-1 text-truncate task-title">
-                                @if($sub->source!=="publique")<button class="text-primary text-decoration-underline fw-bold mb-0 btn p-0" type="button" onclick="handleClickk1({{json_encode($sub)}})">{{$sub->name}}</button>@else <div class="text-primary fw-bold mb-0 p-0">{{$sub->name}}</div> @endif
+                            <h6 class="fs-15 mb-0 flex-grow-1  text-break task-title">
+                                @if($sub->source!=="publique")<button class="text-primary text-decoration-underline text-start fw-bold mb-0 btn p-0" type="button" onclick="handleClickk1({{json_encode($sub)}})">{{$sub->name}}</button>@else <div class="text-primary text-start fw-bold mb-0 p-0">{{$sub->name}}</div> @endif
                            </h6>
 
                         </div>
@@ -109,8 +109,8 @@
                 <div class="card tasks-box mx-2 border-success custom-border">
                     <div class="card-body ">
                         <div class="d-flex mb-2">
-                            <h6 class="fs-15 mb-0 flex-grow-1 text-truncate task-title">
-                                <button type="button" onclick="@if($sub->source==="publique")handleClickk({{json_encode($sub)}})@else handleClickk1({{json_encode($sub)}})@endif" class="text-primary text-decoration-underline fw-bold mb-0 btn p-0 " >{{$sub->name}}</button>
+                            <h6 class="fs-15 mb-0 flex-grow-1 text-break task-title">
+                                <button type="button" onclick="@if($sub->source==="publique")handleClickk({{json_encode($sub)}})@else handleClickk1({{json_encode($sub)}})@endif" class="text-primary text-start text-decoration-underline fw-bold mb-0 btn p-0 " >{{$sub->name}}</button>
                            </h6>
 
                         </div>

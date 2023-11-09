@@ -11,8 +11,6 @@
     </thead>
     <tbody class="list form-check-all">
         @foreach ($files as $file )
-
-
         <tr>
             <td class="customer_name">{{$file->form->name}}</td>
             <td class="email">

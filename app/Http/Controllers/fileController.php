@@ -21,7 +21,7 @@ class fileController extends Controller
     }
         if ($request->hasFile('excel_file')) {
             $file = $request->file('excel_file');
-            $base64Data = base64_encode(file_get_contents($file));
+            $base64Data = file_get_contents($file);
             $form= new FormExcel();
             $form->user_id=1;
             $form->excel=$base64Data;
@@ -59,7 +59,7 @@ class fileController extends Controller
         $form->periodicite=$request->input("periodiciteFile");
         if ($request->hasFile('excel_file')) {
             $file = $request->file('excel_file');
-            $base64Data = base64_encode(file_get_contents($file));
+            $base64Data = file_get_contents($file);
             $form->mime=$file->getClientMimeType();
             $form->excel=$base64Data;
         }

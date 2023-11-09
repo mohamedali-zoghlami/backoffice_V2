@@ -1,6 +1,15 @@
 @extends("layouts.app")
 @section('content')
-
+<style>
+    .sa{
+        margin-left: 10px
+    }
+    .choices__list--dropdown,
+.choices__list[aria-expanded] {
+  word-break: break-word;
+  width: max-content;
+}
+</style>
     <div class="page-content">
         <div class="container-fluid">
 
@@ -32,52 +41,16 @@
                     {{ session('error') }}
                 </div>
             @endif
-            <div class="row">
-                <div class="col-xl-3 col-lg-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="d-flex mb-3">
-                                <div class="flex-grow-1">
-                                    <h5 class="fs-16">Filtres</h5>
-                                </div>
-                                <div class="flex-shrink-0">
-                                    <a href="" class="link-secondary text-decoration-underline" id="clear-filters"> Effacer tout</a>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="accordion accordion-flush filter-accordion">
-                            <div class="accordion-item">
-                                <h2 class="accordion-header" id="flush-headingBrands">
-                                    <button class="accordion-button bg-transparent shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseBrands" aria-expanded="true" aria-controls="flush-collapseBrands">
-                                        <span class="text-muted text-uppercase fs-12 fw-medium">Operateurs</span> <span class="badge bg-success rounded-pill align-middle ms-1 filter-badge"></span>
-                                    </button>
-                                </h2>
-
-                                <div id="flush-collapseBrands" class="accordion-collapse collapse show" aria-labelledby="flush-headingBrands">
-                                    <div class="accordion-body text-body pt-0">
-
-                                        <div class="d-flex flex-column gap-2 mt-3 filter-check">
-                                            <select class="form-control " id="operateur-select" size="15" multiple>
-                                            @foreach($acteurs as $acteur)
-                                            <option  value="{{$acteur->id}}">{{$acteur->nom_acteur}}</option>
-                                            @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="accordion-item">
-
-                            </div>
-                            <!-- end accordion-item -->
-                        </div>
-                    </div>
-                    <!-- end card -->
+            <div class="d-flex">
+                <div class="flex-grow-1">
+                    <h5 class="fs-16">Fiches</h5>
                 </div>
-                <!-- end col -->
-
-                <div class="col-xl-9 col-lg-8">
+                <div class="flex-shrink-0">
+                    <a href="#" class="text-primary text-decoration-underline" id="clearall">Effacer tout</a>
+                </div>
+            </div>
+                <div class="row">
                     <div>
                         <div class="card">
                             <div class="card-header border-0">
@@ -89,9 +62,16 @@
                                     </div>
                                     <div class="col-sm">
                                         <div class="d-flex justify-content-sm-end">
+                                            <div>
+                                                <select class="form-control choices-single "  id="operateur-select" size="15" multiple>
+                                                    <option value="">Sélectionnez un opérateur</option>
+                                                    @foreach($acteurs as $acteur)
+                                                    <option  value="{{$acteur->id}}">{{$acteur->nom_acteur}}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
                                             <div class="search-box ms-2">
                                                 <input id="searchFiches" type="text" class="form-control search" placeholder="Rechercher...">
-                                                <i class="ri-search-line search-icon"></i>
                                             </div>
                                         </div>
                                     </div>
@@ -101,7 +81,7 @@
                         <div class="card-header">
 
                             <div class="row align-items-center">
-                                <div id="items-list" class="table-responsive table-card my-1 mx-1">
+                                <div id="items-list" class="table-responsive table-card">
                                     @include("pages.fichespartial")
                                 </div>
 
@@ -115,7 +95,6 @@
                     </div>
                 </div>
                 <!-- end col -->
-            </div>
             <!-- end row -->
             <div class="modal fade" id="showModalfiche" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
@@ -257,16 +236,39 @@
 @section('script')
     <script>
         $(document).ready(function() {
-
+            const schema= new Choices(document.querySelector(".choices-single"), {
+                shouldSort: false,
+                removeItemButton: true,
+                position: 'bottom',
+                classNames: {
+                    containerInner: 'choices__inner ',
+                    input: 'form-control',
+                    item: 'choices__item sa',
+                    highlightedState: 'text-info',
+                    selectedState: 'text-primary',
+          },
+        });
+        $('select[multiple]').each(function(){
+                var select = $(this), values = {};
+                $('option',select).each(function(i, option){
+                    values[option.value] = option.selected;
+                }).click(function(event){
+                    values[this.value] = !values[this.value];
+                    $('option',select).each(function(i, option){
+                        option.selected = values[option.value];
+                    });
+                });
+            });
             var urlParams = new URLSearchParams(window.location.search);
             var query = urlParams.get('name') || '';
             $('#searchFiches').val(query);
-            if(urlParams.get('operateur_id')!==null)
-                {var operateur=urlParams.get('operateur_id').split(",");
-                const selectElement=document.getElementById("operateur-select")
-                for (const option of selectElement.options) {
-                    option.selected=operateur.includes(option.value);
-                }}
+            query=urlParams.get('operateur_id')||"";
+            if(query!==null&&query!=='')
+                {
+                    var operateur=query.split(",");
+                    schema.setChoiceByValue(operateur);
+
+            }
             function updateResults(test){
                 if(test)
                     {
@@ -310,33 +312,13 @@
             $('#searchFiches').on('keyup', function() {
             updateResults(false);
             });
-            $('#operateur-select').each(function(){
-                var select = $(this), values = {};
-                $('option',select).each(function(i, option){
-                    values[option.value] = option.selected;
-                }).click(function(event){
-                    values[this.value] = !values[this.value];
-                    $('option',select).each(function(i, option){
-                        option.selected = values[option.value];
-                    });
-                    updateResults(true);
-                });
-            });
-            $("#choices").each(function(){
-                var select = $(this), values = {};
-                $('option',select).each(function(i, option){
-                    values[option.value] = option.selected;
-                }).click(function(event){
-                    values[this.value] = !values[this.value];
-                    $('option',select).each(function(i, option){
-                        option.selected = values[option.value];
-                    });
-                });
+            $("#operateur-select").on("change",function(){
+                updateResults(false);
             });
 
-            $('#clear-filters').click(function() {
+            $("#clearall").on("click",function(){
+            schema.removeActiveItems();
                 $('#searchFiches').val('');
-                $('#operateur-select').val([]);
                 updateResults(false);
             });
         });

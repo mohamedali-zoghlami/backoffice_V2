@@ -44,6 +44,14 @@
                     {{ session('error') }}
                 </div>
             @endif
+            <div class="d-flex">
+                <div class="flex-grow-1">
+                    <h5 class="fs-16">Suivi</h5>
+                </div>
+                <div class="flex-shrink-0">
+                    <a href="#" class="link-secondary text-decoration-underline" id="clearall">Effacer tout</a>
+                </div>
+            </div>
             <div class="row">
                 <div class="col-4">
                 <select class="form-control my-3 mr-1 choices-single w-100" name="acteur" id="selectActeur" required multiple >
@@ -123,6 +131,7 @@
            schema= new Choices(document.querySelector(".choices-single"), {
           shouldSort: false,
           removeItemButton: true,
+          position: 'bottom',
           classNames: {
             containerInner: 'choices__inner my-3 mr-1',
             input: 'form-control',
@@ -220,8 +229,7 @@
                 updateActeur();
                 });
             $("#clearall").on("click",function(){
-                schema.setValue([""]);
-            schema.setChoiceByValue("");
+                schema.removeActiveItems();
             $("#searchForm").val("");
             $("#selectFiches").val("");
             $("#annee").val("");

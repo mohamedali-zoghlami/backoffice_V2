@@ -79,7 +79,7 @@ Auth::routes(['register' => false]);
         else
         $data = FormExcel::on("mysql")->find($request->id);
         if ($data) {
-        $file_contents=base64_decode($data->excel);
+        $file_contents=$data->excel;
         $type = "xlsx";
         $mime= 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
         if ($data->mime === 'application/vnd.ms-excel' || $data->mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'||$request->type==="data") {
@@ -95,7 +95,7 @@ Auth::routes(['register' => false]);
             ->header('Content-length', strlen($file_contents))
             ->header('Content-Disposition', 'attachment; filename=' . $data->name . '.' . $type)
             ->header('Content-Transfer-Encoding', 'binary');
-        
+
         }
 
         return response()->json(['error' => 'No data found.']);
