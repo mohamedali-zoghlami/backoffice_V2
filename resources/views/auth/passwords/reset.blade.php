@@ -77,6 +77,22 @@
         window.location.href="/login"
     }
     document.addEventListener("DOMContentLoaded", function () {
+        function isStrongPassword(password) {
+    // Define the regular expressions for each criteria
+    const uppercaseRegex = /[A-Z]/;
+    const lowercaseRegex = /[a-z]/;
+    const digitRegex = /\d/;
+    const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
+
+    // Check if the password meets all criteria
+    const hasUppercase = uppercaseRegex.test(password);
+    const hasLowercase = lowercaseRegex.test(password);
+    const hasDigit = digitRegex.test(password);
+    const hasSpecialChar = specialCharRegex.test(password);
+
+    // Return true if all criteria are met, otherwise return false
+    return hasUppercase && hasLowercase && hasDigit && hasSpecialChar;
+}
         $('#submitForm').submit(function (event) {
             const email=$("#email").val()
             const hasAtSymbol = email.includes("@");
@@ -89,6 +105,8 @@
 
         if(passwordField.value.length<8)
             $("#captchaError").removeClass("d-none").text("Mot de passe doit comporter au moins 8 caractères. !");
+        else if(isStrongPassword(passwordField.value)==false)
+            $("#captchaError").removeClass("d-none").text("Mot de passe doit contenir une lettre majuscule, une miniscule, un chiffre et un caractère spécial !");
         else if(passwordField.value!==confirmedField.value)
             $("#captchaError").removeClass("d-none").text("Mot de passe et confirmer mot de passe ne sont pas identique !");
         else {

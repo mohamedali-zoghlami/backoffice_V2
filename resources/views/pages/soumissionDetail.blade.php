@@ -11,7 +11,6 @@
 </style>
     <div class="page-content">
         <div class="container-fluid">
-
             <!-- start page title -->
             <div class="row">
                 <div class="col-12">
@@ -214,7 +213,7 @@
                     <form class="tablelist-form" method="POST" action="{{route('renvoi')}}" id="renvoiForm" autocomplete="off">
                         @csrf
                         <input id="id" name="id" hidden>
-                        <input id="type" value="formulaire" name="type" hidden>
+                        <input id="type" name="type" hidden>
                         <div class="modal-body">
                             <div>
                             <label for="id-field" class="form-label">Name</label>
@@ -357,6 +356,59 @@
             $("#periodicite").val("");
             updateActeur();
             });
+        download=function(file,type)
+        {   console.log(file)
+             $.ajax({
+                url:"/file/download",
+                type:'GET',
+                data:{
+                    id:file,
+                    type:type,
+                },
+                success: function(response) {
+                    if (response.error)
+                     {
+                        Swal.fire({
+                            icon: 'error',
+                            title: response.error,
+                            showConfirmButton: false,
+                            timer: 1500
+                            });
+                    }
+                    else
+                    {
+                        window.location.href=response.download_url;
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Fichier téléchargé !',
+                            showConfirmButton: false,
+                            timer: 1500
+                            });
+                     }
+                },
+                error: function() {
+                 }
+            }).fail(function (jqXHR) {
+                    if (jqXHR.status === 401) {
+                        // Session expired, redirect to the login page
+                        window.location.href = '/login';
+                    }
+                    if (jqXHR.status === 500) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erreur',
+                            text: "Le serveur de base de données distant est injoignable !",
+                            confirmButtonText: 'OK'
+                            }).then((result) => {
+                            if (result.isConfirmed) {
+                                location.reload();
+                                }
+                            }).then(() => {
+                            location.reload();
+                        });
+                        }
+                });
+        }
             const diffVal=function(json,jsonData,lastMonths)
             {      function diff(array1, array2, labels) {
                     result=[]
@@ -744,7 +796,7 @@
                     }
                 });
             $("#submit_btn").click( function(e){
-                
+
                 $("#errorMessages").empty();
 
                         $("#submit_btn").attr("disabled", true);
@@ -1465,11 +1517,11 @@
             }
             })
     }
-    reouvrir=async function(form,acteur)
+    reouvrir=async function(form,acteur,type)
     {   const result= await Swal.fire({
                         icon: 'warning',
-                        title: 'Réouvrir un formulaire',
-                        text: " Est-ce que vous confirmez la réouveture de ce formulaire ? ",
+                        title: 'Réouvrir un '+type,
+                        text: " Est-ce que vous confirmez la réouveture de ce "+type+" ? ",
                         showCancelButton:true,
                         confirmButtonText: 'Oui',
                         cancelButtonText: 'Non',
@@ -1483,6 +1535,7 @@
             data:
             {acteur:acteur,
                 formulaire:form.id,
+                type:type,
                 annee:form.year,
                 periodicite:form.date_to,
                 _token:"{{csrf_token()}}"
@@ -1532,10 +1585,11 @@
                         }
                 });
     }
-    renvoyer=function(form){
+    renvoyer=function(form,type){
+        console.log(form)
         $("#id").val(form.sub_id);
         $("#formfileName").val(form.name);
-
+        $("#type").val(type)
     }
     ouvrir=function(form){
         handleClickk(form);

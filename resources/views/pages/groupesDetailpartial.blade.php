@@ -5,7 +5,7 @@
             <th class="sort" data-sort="customer_name">Nom du formulaire</th>
             <th class="sort" data-sort="customer_name">Priorite</th>
             <th class="sort" data-sort="customer_name">Type</th>
-            <th class="sort" data-sort="customer_name">Dépendance</th>
+            <th class="sort" data-sort="customer_name">Dï¿½pendance</th>
             <th class="sort" data-sort="action">Action</th>
         </tr>
     </thead>
@@ -34,6 +34,6 @@
 </table>
 <div class="d-flex justify-content-end">
     <div class="pagination-wrap hstack gap-2">
-        {{$form->appends(['name' => request('name')])->links()}}
+        {{$form->links()}}
     </div>
 </div>

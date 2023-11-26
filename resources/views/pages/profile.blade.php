@@ -181,6 +181,23 @@
                         });
         }
         $(document).ready(function () {
+            function isStrongPassword(password) {
+    // Define the regular expressions for each criteria
+    console.log(password)
+    const uppercaseRegex = /[A-Z]/;
+    const lowercaseRegex = /[a-z]/;
+    const digitRegex = /\d/;
+    const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
+
+    // Check if the password meets all criteria
+    const hasUppercase = uppercaseRegex.test(password);
+    const hasLowercase = lowercaseRegex.test(password);
+    const hasDigit = digitRegex.test(password);
+    const hasSpecialChar = specialCharRegex.test(password);
+
+    // Return true if all criteria are met, otherwise return false
+    return hasUppercase && hasLowercase && hasDigit && hasSpecialChar;
+}
             $('#changePassButton').on("click",function (event) {
 
             $('#successAlert').hide();
@@ -195,6 +212,14 @@
                 event.preventDefault(); // Prevent form submission
                 return;
             }
+            else if(isStrongPassword(newpassword)==false)
+        {
+            $("#alert-success").empty();
+            $('#passwordError').text("Le nouveau mot de passe doit contenir une lettre majuscule, une miniscule, un chiffre et un caractère spécial !");
+            $('#passwordError').removeClass('d-none');
+            event.preventDefault(); // Prevent form submission
+                return;
+        }
             else if(newpassword!=confirmpassword)
             {   $("#alert-success").empty();
                 $('#passwordError').text("Le nouveau mot de passe ne correspond pas, retapez confirmer mot de passe !");

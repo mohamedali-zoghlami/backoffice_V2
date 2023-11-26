@@ -73,7 +73,7 @@ class fileController extends Controller
                 return response()->json(['success' => true, 'download_url' => $download_url]);
             }
         else
-            {   dd($request);
+            {
                 return response()->json(['error' =>"Something went wrong !"]);
             }
     }

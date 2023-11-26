@@ -6,6 +6,7 @@ use App\Models\Groupe;
 use App\Models\GroupeForm;
 use App\Models\Commentaire;
 use App\Models\CommentaireExcel;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 use App\Models\FormIntern;
 use App\Models\FormExcel;
@@ -1040,23 +1041,37 @@ class adminController extends Controller
         $form_id=$request->formulaire;
         $periodicite=$request->periodicite;
         $annee=$request->annee;
-        $sub=submission::on("mysql")->where("user_id",$user->id)->where("form_id",$form_id)->where("year",$annee)->where("periodicity",$periodicite)->first();
+        $type=$request->type;
+        if($type==="fichier")
+            $sub=SubmissionExcel::on("mysql")->where("user_id",$user->id)->where("form_id",$form_id)->where("year",$annee)->where("periodicity",$periodicite)->first();
+        else
+         $sub=submission::on("mysql")->where("user_id",$user->id)->where("form_id",$form_id)->where("year",$annee)->where("periodicity",$periodicite)->first();
         if(!$sub)
         {
-            $sub= new submission();
-            $sub->operateur_id=$request->acteur;
+            $sub= $type==="fichier"?new SubmissionExcel():new submission();
+            if($type==="fichier")
+            {
+                $sub->acteur_id=$request->acteur;
+                $sub->excel="";
+                $sub->mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            }
+            else
+            {
+                $sub->operateur_id=$request->acteur;
+                $sub->formHistoric_id=0;
+                $sub->commentaire="";
+                $sub->formJson="{}";
+                $sub->ESTIMATED="Y";
+            }
             $sub->user_id=$user->id;
             $sub->form_id=$form_id;
             $sub->periodicity=$periodicite;
             $sub->year=$annee;
             $sub->historique="L";
             $sub->type="refaire";
-            $sub->formHistoric_id=0;
-            $sub->commentaire="";
-            $sub->formJson="{}";
-            $sub->ESTIMATED="Y";
+
             $sub->setConnection("mysql")->save();
-            return response()->json(["success"=>"Formulaire ré-ouvert avec succès !"]);
+            return response()->json(["success"=>strtoupper($request->type)." ré-ouvert avec succès !"]);
 
         }
         else if($sub->type==="draft")
@@ -1068,11 +1083,11 @@ class adminController extends Controller
         }
         else if($sub->type==="final")
         {
-            return response()->json(["error"=>"Le formulaire est déja envoyé par cet opérateur pour cette périodicité !"]);
+            return response()->json(["error"=>"Le ".$request->type." est déja envoyé par cet opérateur pour cette périodicité !"]);
         }
         else
         {
-            return response()->json(["error"=>"Le formulaire est déja ouvert pour cet opérateur !"]);
+            return response()->json(["error"=>"Le ".$request->type." est déja ouvert pour cet opérateur !"]);
         }
     }
     public function suivi(Request $request)
@@ -1320,13 +1335,14 @@ class adminController extends Controller
         $groupes=GroupeForm::on("mysql")->where("groupe_id",$request->id);
         $formsWithPriority = GroupeForm::on("mysql")->where("type","formulaire")->get()->pluck("form_save_id");
         $fichierWithPriority =  GroupeForm::on("mysql")->where("type","fichier")->get()->pluck("form_save_id");
-        $form=GroupeForm::on("mysql")->where("groupe_id",$request->id)->orderBy("priorite")->paginate(10);
+        $form=GroupeForm::on("mysql")->where("groupe_id",$request->id)->orderBy("priorite")->get();
         foreach($form as $f)
         {
             if($f->type==="formulaire")
                 $fet=FormSave::on("mysql")->find($f->form_save_id);
             else
                 $fet=FormExcel::on("mysql")->find($f->form_save_id);
+            if($fet)
             $f->name=$fet->name;
         }
         if ($request->name) {
@@ -1334,6 +1350,14 @@ class adminController extends Controller
                 return stripos($item->name, $request->name) !== false;
             });
         }
+        $perPage = 10;
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $form->slice(($currentPage - 1) * $perPage, $perPage)->all();
+        $form = new LengthAwarePaginator($currentItems, $form->count(), $perPage);
+        $form->setPath(url()->current());
+        $form->appends(['name' => $request->name]);
+
+
         if ($request->ajax()) {
             return view('pages.groupesDetailpartial', compact('form'))->render();
         }
@@ -1471,8 +1495,12 @@ class adminController extends Controller
         $acteur=$request->acteur;
         $id=$request->id;
         $forms=FormSave::on("sqlsrv")->where("fiche_id",$id);
+        $excel=FormExcel::on("sqlsrv")->where("fiche_id",$id);
         if($request->name)
-            $forms=$forms->where("name","like","%".$request->name."%");
+            {
+                $forms=$forms->where("name","like","%".$request->name."%");
+                $excel=$excel->where("name","like","%".$request->name."%");
+            }
         if($request->periodicite)
         {
             if($request->periodicite[0]==="M")
@@ -1492,8 +1520,10 @@ class adminController extends Controller
                 $pe="annuelle";
             }
             $forms=$forms->where("periodicite",$pe);
+            $excel=$excel->where("periodicite",$pe);
         }
         $forms=$forms->get();
+        $excel=$excel->get();
         $count=new \stdClass();
         $count->faire=0;
         $count->cours=0;
@@ -1530,10 +1560,43 @@ class adminController extends Controller
                     $count->faire+=1;}
 
         }
+        foreach($excel as $form)
+        {   unset($form->excel);
+            if($request->periodicite)
+                $periodicite=$request->periodicite;
+            else
+                $periodicite=HomeController::time($form->periodicite,"sqlsrv");
+            if($request->year)
+                $year=$request->year;
+            else
+                $year=HomeController::year($periodicite);
+            $form->year=$year;
+            $form->date_to=$periodicite;
+            $a="type";
+            $form->source="publique";
+            $sub=SubmissionExcel::on("sqlsrv")->where("form_id",$form->id)->where("acteur_id",$acteur)->where("periodicity",$periodicite)->where("year",$year)->first();
+            if($sub)
+                    {
+                    $form->type=$sub->$a;
+                    $form->created_at=$sub->created_at;
+                    $form->updated_at=$sub->updated_at;
+                    if($form->type==="draft")
+                        $count->cours+=1;
+                    else if($form->type==='final')
+                        {$count->env+=1;
+                        $form->sub_id=$sub->id;
+                        }
+                    }
+            else
+                    {
+                    $form->type="faire";
+                    $count->faire+=1;}
+
+        }
         $acteurName=Acteur::on("sqlsrv")->find($request->acteur)->nom_acteur;
         if($request->ajax())
-            return view("pages.soumissionDetailpartial",["forms"=>$forms,"count"=>$count,"acteur"=>$acteur])->render( );
-        return view("pages.soumissionDetail",["forms"=>$forms,"count"=>$count,"acteur"=>$acteur,"acteurName"=>$acteurName]);
+            return view("pages.soumissionDetailpartial",["forms"=>$forms,"count"=>$count,"acteur"=>$acteur,"excel"=>$excel])->render( );
+        return view("pages.soumissionDetail",["forms"=>$forms,"count"=>$count,"acteur"=>$acteur,"acteurName"=>$acteurName,"excel"=>$excel]);
     }
     public function soumissionIntern(Request $request)
     {
@@ -1600,7 +1663,7 @@ class adminController extends Controller
                     }
         }
         if($request->ajax())
-            return view("pages.soumissionDetailpartial",["forms"=>$forms,"count"=>$count,"acteur"=>$acteur])->render( );
-        return view("pages.soumissionDetail",["forms"=>$forms,"count"=>$count,"acteur"=>$acteur]);
+            return view("pages.soumissionDetailpartial",["forms"=>$forms,"count"=>$count,"acteur"=>$acteur,"excel"=>[]])->render( );
+        return view("pages.soumissionDetail",["forms"=>$forms,"count"=>$count,"acteur"=>$acteur,"excel"=>[]]);
     }
 }

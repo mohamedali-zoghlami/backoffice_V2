@@ -76,6 +76,10 @@ Auth::routes(['register' => false]);
                     $data->name=$name."_".$data->periodicity."_".$data->year;
                 }
         }
+        else if($request->type==="form1")
+        {
+            $data = FormExcel::on("sqlsrv")->find($request->id);
+        }
         else
         $data = FormExcel::on("mysql")->find($request->id);
         if ($data) {

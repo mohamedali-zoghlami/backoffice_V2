@@ -13,7 +13,7 @@
         <div  class=" mh-100 px-2 mx-n3  ">
             <div id="unassigned-task" class="tasks @if($count->faire)bg-white border @endif rounded-4 px-3 py-4">
         @foreach ($fiches as $fiche )
-        @if ($fiche->sub==0 && $fiche->draft==0 )
+        @if ($fiche->sub==0 && $fiche->draft==0 && ($fiche->forms>0 || $fiche->ficher>0) )
 
                 <div class="card tasks-box mx-2 border-primary custom-border">
                     <div class="card-body ">
@@ -25,6 +25,8 @@
                         </div>
                         <div class="flex-grow-1">
                             <h6 class="text-muted fw-bold mb-0">({{$fiche->forms}} Formulaires Publique)</h6>
+                            <h6 class="text-muted fw-bold mb-0">({{$fiche->fichier}} Fichier)</h6>
+
                         </div>
                         <br>
                         <div class="mb-3">
@@ -77,6 +79,8 @@
                             </div>
                             <div class="flex-grow-1">
                                 <h6 class="text-muted fw-bold mb-0">({{$file->forms}} Formulaires Publiques)</h6>
+                                <h6 class="text-muted fw-bold mb-0">({{$file->fichier}} Fichier)</h6>
+
                             </div>
                             <br>
                             <div class="mb-3">
@@ -88,13 +92,13 @@
                                         <h6 class="fw-bold mb-0">{{$file->draft}} : <span class="text-warning"> EN COURS</span></h6>
                                     </div>
                                     <div class="flex-grow-1">
-                                        <h6 class="fw-bold mb-0">{{$file->forms-($file->sub+$file->draft+$file->renv)}} : <span class="text-secondary"> A FAIRE</span>
+                                        <h6 class="fw-bold mb-0">{{($file->forms+$file->fichier)-($file->sub+$file->draft+$file->renv)}} : <span class="text-secondary"> A FAIRE</span>
                                     </div>
                                 </div>
                                 <div class="progress rounded-3 progress-sm">
                                     <div class="progress-bar bg-success" role="progressbar" style="width: {{number_format(($file->sub/$file->forms)*100,2)}}%" aria-valuenow="{{number_format(($file->sub/$file->forms)*100,2)}}" aria-valuemin="0" aria-valuemax="100"></div>
                                     <div class="progress-bar bg-warning" role="progressbar" style="width: {{number_format(($file->draft/$file->forms)*100,2)}}%" aria-valuenow="{{number_format(($file->sub/$file->forms)*100,2)}}" aria-valuemin="0" aria-valuemax="100"></div>
-                                    <div class="progress-bar bg-secondary"  role="progressbar" style="width: {{number_format((($file->forms-$file->sub-$file->draft)/$file->forms)*100,2)}}%" aria-valuenow="{{number_format((($file->forms-$file->sub-$file->draft)/$file->forms)*100,2)}}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    <div class="progress-bar bg-secondary"  role="progressbar" style="width: {{number_format((($file->forms+$file->fichier-$file->sub-$file->draft)/$file->forms)*100,2)}}%" aria-valuenow="{{number_format((($file->forms+$file->fichier-$file->sub-$file->draft)/$file->forms)*100,2)}}" aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
                             </div>
                         </div>
@@ -135,6 +139,8 @@
                         </div>
                         <div class="flex-grow-1">
                             <h6 class="text-muted fw-bold mb-0">({{$file->forms}} Formulaires Publiques)</h6>
+                            <h6 class="text-muted fw-bold mb-0">({{$file->fichier}} Fichier)</h6>
+
                         </div>
                         <br>
                         <div class="mb-3">

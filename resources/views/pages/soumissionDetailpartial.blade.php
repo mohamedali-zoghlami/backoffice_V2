@@ -31,9 +31,35 @@
                         @if($sub->source==="publique")
                         <div class="flex-grow-1 mt-3">
                             <button onclick="soumissionAutomatique({{json_encode($sub)}},{{json_encode($acteur)}})" class="btn btn-sm btn-primary">Soumission automatique</button>
-                            <button onclick="reouvrir({{json_encode($sub)}},{{json_encode($acteur)}})" class="btn btn-sm btn-warning">Reouvrir</button>
+                            <button onclick="reouvrir({{json_encode($sub)}},{{json_encode($acteur)}},'formulaire')" class="btn btn-sm btn-warning">Reouvrir</button>
                         </div>
                         @endif
+                    </div>
+                    <!--end card-body-->
+                </div>
+                <!--end card-->
+                @endif
+                @endforeach
+                @foreach ($excel as $sub )
+                @if($sub->type==="faire")
+                <div class="card tasks-box mx-2 border-primary custom-border">
+                    <div class="card-body ">
+                        <div class="d-flex mb-2">
+                            <h6 class="fs-15 mb-0 flex-grow-1 text-primary text-break fw-bold task-title text-start">
+                                Fichier : {{$sub->name}}
+                            </h6>
+
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted fw-bold mb-0">{{ucwords($sub->periodicite)}}</h6>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold mb-0">{{$sub->date_to}} - {{$sub->year}}</h6>
+                        </div>
+                        <div class="pt-3 flex-grow-1 justify-content-start d-flex">
+                            <button onclick="download({{json_encode($sub->id)}},'form1')" class="btn btn-primary btn-sm">Télécharger</button>
+                            <button onclick="reouvrir({{json_encode($sub)}},{{json_encode($acteur)}},'fichier')" class="mx-1 btn btn-sm btn-warning">Reouvrir</button>
+                        </div>
                     </div>
                     <!--end card-body-->
                 </div>
@@ -78,7 +104,8 @@
                         @if($sub->source==="publique")
                         <div class="flex-grow-1 mt-3">
                             <button onclick="soumissionAutomatique({{json_encode($sub)}},{{json_encode($acteur)}})" class="btn btn-sm btn-primary">Soumission automatique</button>
-                            <button onclick="reouvrir({{json_encode($sub)}})" class="btn btn-sm btn-warning">Reouvrir</button>                        </div>
+                            <button onclick="reouvrir({{json_encode($sub)}})" class="btn btn-sm btn-warning ">Reouvrir</button>
+                         </div>
                         @endif
                     </div>
                     <!--end card-body-->
@@ -133,6 +160,32 @@
                     </div>
                     <!--end card-body-->
                 </div>
+                @endif
+                @endforeach
+                @foreach ($excel as $sub )
+                @if($sub->type==="final")
+                <div class="card tasks-box mx-2 border-success custom-border">
+                    <div class="card-body ">
+                        <div class="d-flex mb-2">
+                            <h6 class="fs-15 mb-0 flex-grow-1 text-primary text-break fw-bold task-title text-start">
+                                Fichier : {{$sub->name}}
+                            </h6>
+
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted fw-bold mb-0">{{ucwords($sub->periodicite)}}</h6>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold mb-0">{{$sub->date_to}} - {{$sub->year}}</h6>
+                        </div>
+                        <div class="pt-3 flex-grow-1 justify-content-start d-flex">
+                            <button onclick="download({{json_encode($sub->id)}},'data')" class="btn btn-success btn-sm ">Télécharger</button>
+                            <button onclick="renvoyer({{json_encode($sub)}},'fichier')" data-bs-toggle="modal" data-bs-target="#showModalComm" class="btn btn-sm btn-danger mx-1">Renvoyer</button>
+                        </div>
+                    </div>
+                    <!--end card-body-->
+                </div>
+                <!--end card-->
                 @endif
                 @endforeach
                  </div>

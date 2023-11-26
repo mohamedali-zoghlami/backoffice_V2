@@ -111,7 +111,8 @@ class sqlServerController extends Controller
             {
                 $fichet=FormSave::on("sqlsrv")->where("fiche_id",$fiche->id)->get();
                 $fiche->forms=$fichet->count();
-                $fiche->intern=FormIntern::on("sqlsrv")->where("fiche_id",$fiche->id)->get()->count();
+                $fichette=FormExcel::on("sqlsrv")->where("fiche_id",$fiche->id)->get();
+                $fiche->fichier=$fichette->count();
                 $fiche->draft=0;
                 $fiche->sub=0;
                 $fiche->renv=0;
@@ -128,8 +129,24 @@ class sqlServerController extends Controller
                             else
                                 $fiche->renv+=1;
                         }
+
                 }
-                if($fiche->sub===($fiche->forms-$fiche->renv)&&$fiche->sub!==0)
+                foreach($fichette as $form)
+                {   $periodicity=HomeController::time($form->periodicite,"sqlsrv");
+                    $year=HomeController::year($periodicity);
+                    $fast=SubmissionExcel::on("sqlsrv")->where("form_id",$form->id)->where("acteur_id",$request->acteur)->where("periodicity",$periodicity)->where("year",$year)->first();
+                    if($fast)
+                        {
+                            if($fast->type==="final")
+                                $fiche->sub+=1;
+                            else if($fast->type==="draft")
+                                $fiche->draft+=1;
+                            else
+                                $fiche->renv+=1;
+                        }
+
+                }
+                if($fiche->sub===(($fiche->forms+$fiche->fichier)-$fiche->renv)&&$fiche->sub!==0)
                     {$count->env+=1;
                         $fiche->type="env";
                     }
@@ -137,7 +154,7 @@ class sqlServerController extends Controller
                     {$count->cours+=1;
                     $fiche->type="cours";
                     }
-                else
+                else if($fiche->forms>0 || $fiche->fichier>0)
                     $count->faire+=1;
             }
             if($request->ajax())
@@ -278,6 +295,9 @@ class sqlServerController extends Controller
             $fichier=SubmissionExcel::on("mysql")->where("id",$request->id)->first();
         if(!$fichier)
             return redirect()->back()->with("error","Soumission inexistante !");
+        if($fichier->type==="refaire")
+            return redirect()->back()->with("error","Soumission déja renvoyé !");
+
         $fichier->type="refaire";
         $fichier->setConnection("mysql")->save();
         event(new RenvoiFiche($fichier,$request->type));
