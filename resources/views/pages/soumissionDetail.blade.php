@@ -9,6 +9,7 @@
     border-left: 5px solid ;
     }
 </style>
+
     <div class="page-content">
         <div class="container-fluid">
             <!-- start page title -->
@@ -241,6 +242,31 @@
                 </div>
             </div>
         </div>
+        <div class="modal modal-l" id="commModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h6 class="fs-16 mb-0 flex-grow-1 text-truncate task-title text-danger  fw-bold">
+                            Commentaires
+                            </h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="btn-close"></button>
+                    </div>
+                    <div class="modal-body">
+                    <div data-simplebar="init" style="height: 300px;" class="px-3 mx-n3 mb-2"><div class="simplebar-wrapper" style="margin: 0px -16px;"><div class="simplebar-height-auto-observer-wrapper"><div class="simplebar-height-auto-observer"></div></div><div class="simplebar-mask"><div class="simplebar-offset" style="right: 0px; bottom: 0px;"><div class="simplebar-content-wrapper" tabindex="0" role="region" aria-label="scrollable content" style="height: 100%; overflow: hidden scroll;"><div class="simplebar-content" id="imnt" style="padding: 0px 16px;">
+
+                            </div></div></div></div><div class="simplebar-placeholder" style="width: auto; height: 694px;"></div></div><div class="simplebar-track simplebar-horizontal" style="visibility: hidden;"><div class="simplebar-scrollbar" style="width: 0px; display: none;"></div></div><div class="simplebar-track simplebar-vertical" style="visibility: visible;"><div class="simplebar-scrollbar" style="height: 129px; transform: translate3d(0px, 0px, 0px); display: block;"></div></div></div>
+                        </div>
+                </div>
+            </div>
+        </div>
+        <div id="template-comm" style="display: none">
+            <div class="d-flex mb-4" id="comtest">
+                <div class="flex-grow-1 ms-3">
+                    <h5 class="fs-13"><span id="source">Admin </span><small class="text-muted ms-2" id="dateText"></small></h5>
+                    <p class="text-muted" id="commentaireText"></p>
+                </div>
+            </div>
+        </div>
         <!-- container-fluid -->
         <div id="templateError" style="display:none" class="alert-danger alert text-center mx-4 my-2"></div>
         <div class="modal fade" id="saisieAuto" hidden>
@@ -356,6 +382,42 @@
             $("#periodicite").val("");
             updateActeur();
             });
+     commentaire= function(sub)
+        { comm=sub.commentaire;
+            console.log(sub)
+            console.log(comm.length);
+            $("#imnt").empty()
+            $("#commModal").modal("show");
+        if(comm.length===0)
+           {const h6Element = document.createElement("h6");
+            h6Element.classList.add("text-center");
+            h6Element.textContent = "Aucun commentaire pour cette soumission !";
+             $("#imnt").append(h6Element)}
+        for(i=0;i<comm.length;i++)
+        {
+            var template=$("#template-comm").clone();
+            template.removeAttr("id").removeAttr("style");
+            template.find("#commentaireText").text(comm[i].comment);
+            let align;
+            if(comm[i].type==="admin")
+                align="text-end";
+            else
+                {align="text-start";
+                template.find("#source").text(@json($acteurName));
+            }
+            template.find("#comtest").addClass(align);
+            const date = new Date(comm[i].created_at);
+            const options = {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+            };
+
+            const formattedDate = date.toLocaleDateString(undefined, options);
+            template.find("#dateText").text(formattedDate);
+            $("#imnt").append(template)
+        }
+    }
         download=function(file,type)
         {   console.log(file)
              $.ajax({
@@ -1586,7 +1648,6 @@
                 });
     }
     renvoyer=function(form,type){
-        console.log(form)
         $("#id").val(form.sub_id);
         $("#formfileName").val(form.name);
         $("#type").val(type)

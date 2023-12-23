@@ -1,3 +1,4 @@
+@if(auth()->user())
 <header id="page-topbar">
     <div class="layout-width">
         <div class="navbar-header">
@@ -122,7 +123,7 @@
                     <div id="two-column-menu">
                     </div>
                     <ul class="navbar-nav" id="navbar-nav">
-                        
+
                         <li class="nav-item">
                             <a class="nav-link menu-link" href="{{ url('/') }}" role="button" aria-expanded="false" aria-controls="sidebarDashboards">
                                 <i data-feather="home" class="icon-dual"></i> <span data-key="t-dashboards">Dashboard</span>
@@ -247,4 +248,4 @@
 
             <div class="sidebar-background"></div>
         </div>
-
+@endif

@@ -37,21 +37,28 @@
                             Saisir votre email et on vous envoi un lien de réinitialisation!
                         </div>
                         <div class="p-2">
-                            <form method="POST" action="{{ route('password.email') }}">
+                            <p class="alert alert-danger d-none text-center" id="loginError">
+
+                            </p>
+                            <form method="POST" onsubmit="return verif(event)" action="{{ route('password.email') }}">
                                 @csrf
                                 <div class="mb-4">
                                     <label class="form-label">Email</label>
                                     <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autocomplete="email" autofocus>
                                 </div>
                                 @error('email')
-                                <div class="aalert alert-success text-center" role="alert">
+                                <div class="alert alert-danger text-center" role="alert">
                                     E-mail non enregistré !
                                 </div>
                                 @enderror
                                 @if (session('status'))
                                 <div class="alert alert-success text-center" role="alert">
-                                    E-mail de réinitialisation du mot de passe est correctement envoyé !                                </div>
+                                    E-mail de réinitialisation du mot de passe est correctement envoyé !</div>
                                  @endif
+                                 <div class="mb-3 mx-3">
+                                    <div class="g-recaptcha" data-sitekey="{{ env('GOOGLE_RECAPTCHA_KEY') }}">
+                                    </div>
+                                </div>
                                 <div class="text-center mt-4">
                                     <button class="btn btn-primary w-100" type="submit">Envoi du lien de réinitalisation !</button>
                                 </div>
@@ -68,4 +75,17 @@
         <!-- end row -->
     </div>
     <!-- end container -->
+@endsection
+@section("script")
+<script>
+    function verif(e){
+
+            $("#loginError").addClass("d-none");
+             if (grecaptcha.getResponse() === "") {
+                $('#loginError').text("Captcha est obligatoire !");
+                $('#loginError').removeClass('d-none');
+                e.preventDefault();
+        }
+    }
+    </script>
 @endsection

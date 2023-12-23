@@ -30,29 +30,7 @@ class FormController extends Controller
             $sub=submission::where("operateur_id",$user_id)->where("form_id",$request->form_id)->where("periodicity",$request->periodicity)->where("year",$request->year)->first();
         }
         else
-        {   if($request->type==="final")
-            {$v= new verifyFormController();
-            $st=new \stdClass();
-            $st->form_id=$request->form_id;
-            $st->periodicity=$request->periodicite;
-            $st->year=$request->year;
-            $periods=$v->groupe($st);
-            if(count($periods)>0){
-                $id=$v->id($st);
-                foreach($periods as $period){
-                    list($periodicity,$year)=explode(" - ",$period);
-                    $s1=submission::where('form_id', $id)
-                    ->where('operateur_id', $user_id )
-                    ->where('periodicity', $periodicity)
-                    ->where('year', $year)
-                    ->first();
-
-                    if(!$s1)
-                    {
-                        return response()->json(["error"=>"Veuillez respecter l'ordre des formulaires !"]);
-                    }
-                 }
-            }}
+        {
         $sub=submission::where("operateur_id",$user_id)->where("form_id",$request->form_id)->where("periodicity",$request->periodicite,"mysql")->where("year",$request->year)->first();
         }
         if(!$sub)

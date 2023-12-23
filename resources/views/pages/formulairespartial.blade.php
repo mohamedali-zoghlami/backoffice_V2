@@ -7,7 +7,7 @@
             <th class="sort" data-sort="action">Action</th>
         </tr>
     </thead>
-    <tbody class="list form-check-all" id="formsDisplay"  @if(session()->has("fichier")||session()->has("intern"))style="display: none"@endif>
+    <tbody class="list form-check-all" id="formsDisplay"  @if(session()->has("fichier")||session()->has("intern")||session()->has("pdf"))style="display: none"@endif>
     @foreach($forms as $form)
         <tr>
             <td class="customer_name">
@@ -175,10 +175,55 @@
             </tr>
         @endforeach
         </tbody>
+        <tbody class="list form-check-all" id="filesPdf" @if(session()->has("pdf")===false)style="display: none"@endif>
+            @foreach($pdf as $file)
+                <tr>
+                    <td class="customer_name" >
+                    <h6 class="text-primary fw-bold mb-0 btn p-0">
+                        {{$file->name}}
+                    </h6>
+                    </td>
+                    @php
+                        if($file->periodicite==="mensuelle")
+                            $bg="bg-primary";
+                        else if($file->periodicite==="trimestrielle")
+                            $bg="bg-success";
+                        else if($file->periodicite==="annuelle")
+                            $bg="bg-dark";
+                        else
+                            $bg="bg-danger";
+                    @endphp
+                    <td>
+                        <div class="btn btn-sm {{$bg}} text-white">
+                            {{ucfirst($file->periodicite)}}
+                        </div>
+                    </td>
+                    <td class="email">
+                    <div class="d-flex gap-2">
+                        Description : {{$file->description}}
+                     </div>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-2">
+
+                            <div class="edit">
+                                <button class="btn btn-sm btn-primary edit-item-btn" onclick="updatePDF({{json_encode($file->id)}},{{json_encode($file->name)}},{{json_encode($file->periodicite)}},{{json_encode($file->description)}})" data-bs-toggle="modal" data-bs-target="#showModalPDFUpdate">Modifier</button>
+                            </div>
+                            <div class="remove">
+                                <button class="btn btn-sm btn-danger remove-item-btn" onclick="deletePDF({{$file->id}})" data-bs-toggle="modal" data-bs-target="#deleteRecordModal15">Supprimer</button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            @endforeach
+            </tbody>
 </table>
 
 <div class="d-flex justify-content-end">
-    <div class="pagination-wrap hstack gap-2" id="formLink"  @if(session()->has("fichier")||session()->has("intern"))style="display: none"@endif>
+    <div class="pagination-wrap hstack gap-2" id="formLink"  @if(session()->has("pdf")===false)style="display: none"@endif>
+        {{$pdf->appends(['name' => request('name'),'visibility' => request('visibility'),'periodicite' => request('periodicite')])->links()}}
+    </div>
+    <div class="pagination-wrap hstack gap-2" id="formLink"  @if(session()->has("fichier")||session()->has("intern")||session()->has("pdf"))style="display: none"@endif>
         {{$forms->appends(['name' => request('name'),'visibility' => request('visibility'),'periodicite' => request('periodicite')])->links()}}
     </div>
     <div class="pagination-wrap hstack gap-2" id="fileLink"  @if(session()->has("fichier")===false)style="display: none"@endif>

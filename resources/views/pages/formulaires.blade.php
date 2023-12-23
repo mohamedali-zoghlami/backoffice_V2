@@ -57,7 +57,9 @@
                                     </div>
                                     <div class="col-sm-auto">
                                         <button type="button" class="btn btn-primary add-btn" data-bs-toggle="modal" id="create-btn" data-bs-target="#showModalformulaire"><i class="ri-add-line align-bottom me-1"></i> Ajouter Fichier Excel </button>
-
+                                    </div>
+                                    <div class="col-sm-auto">
+                                        <button type="button" class="btn btn-info add-btn" data-bs-toggle="modal" id="create-btn" data-bs-target="#showModalPDFAdd"><i class="ri-add-line align-bottom me-1"></i> Ajouter Fichier PDF </button>
                                     </div>
                                     <div class="col-sm-auto">
                                         <button type="button" class="btn btn-warning add-btn" data-bs-toggle="modal" id="create-btn" data-bs-target="#downloadModal"><i class="ri-file-download-line  align-bottom me-1"></i> Télécharger </button>
@@ -91,7 +93,7 @@
                                                 <form method="POST" action="/deleteType">
                                                     @csrf
                                                     <input type="text"  id="id" name="id" value="{{$idFiche}}" class="form-control" placeholder="ID" hidden />
-                                                <button type="submit" style="background-color:transparent"  class="nav-link @if(session()->has('fichier')===false&&session()->has('intern')===false) active @endif fw-semibold" data-bs-toggle="tab" id="formButton" role="tab" @if(session()->has('fichier')===false&&session()->has('intern')===false) disabled @endif>
+                                                <button type="submit" style="background-color:transparent"  class="nav-link @if(session()->has('fichier')===false&&session()->has('intern')===false&&session()->has("pdf")===false) active @endif fw-semibold" data-bs-toggle="tab" id="formButton" role="tab" @if(session()->has('fichier')===false&&session()->has('intern')===false&&session()->has("pdf")===false) disabled @endif>
                                                     Formulaires publiques
                                                 </button>
                                             </form>
@@ -111,6 +113,15 @@
                                                     <input type="text"  id="id" name="id" value="{{$idFiche}}" class="form-control" placeholder="ID" readonly hidden/>
                                                 <button type="submit" style="background-color:transparent"  class="nav-link @if(session()->has('intern')) active @endif fw-semibold" data-bs-toggle="tab" id="fileButton"  role="tab" @if(session()->has("intern")) disabled @endif>
                                                     Formulaires Internes
+                                                </button>
+                                                </form>
+                                            </li>
+                                            <li class="nav-item">
+                                                <form method="POST" action="/setInt2">
+                                                    @csrf
+                                                    <input type="text"  id="id" name="id" value="{{$idFiche}}" class="form-control" placeholder="ID" readonly hidden/>
+                                                <button type="submit" style="background-color:transparent"  class="nav-link @if(session()->has('pdf')) active @endif fw-semibold" data-bs-toggle="tab" id="fileButton"  role="tab" @if(session()->has("pdf")) disabled @endif>
+                                                    Fichier PDF
                                                 </button>
                                                 </form>
                                             </li>
@@ -270,6 +281,98 @@
                     </div>
                 </div>
             </div>
+
+            <div class="modal fade" id="showModalPDFUpdate" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-light p-3">
+                            <h5 class="modal-title" id="exampleModalLabel"></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
+                        </div>
+                        <form class="tablelist-form" method="POST" action="{{route('pdf.update')}}" enctype="multipart/form-data" autocomplete="off">
+                            @csrf
+                            <div class="modal-body">
+                                <div class="mb-3" id="modal-id" style="display: none;">
+                                    <label for="id-field" class="form-label">ID</label>
+                                    <input type="text"  id="idPdf" name="id" class="form-control" placeholder="ID" readonly />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="email-field" class="form-label">PDF</label>
+                                    <input type="text" id="namePdf" name="name" maxlength="255" class="form-control" placeholder="Enter le nom du PDF" required />
+                                    <div class="invalid-feedback">Entrer le nom du PDF.</div>
+                                </div>
+                                <div>
+                                    <label for="status-field" class="form-label">Periodicite</label>
+                                    <select class="form-control" data-trigger name="periodicite" id="periodicitePdf" required>
+                                        <option value="mensuelle">Mensuelle</option>
+                                        <option value="trimestrielle">Trimestrielle</option>
+                                        <option value="semestrielle">Semestrielle</option>
+                                        <option value="annuelle">Annuelle</option>
+                                    </select>
+                                </div>
+                                <br>
+                                <div>
+                                    <label for="status-field" class="form-label">Description</label>
+                                    <input type="text" id="descriptionPdf" name="description" maxlength="255" class="form-control" placeholder="Enter la description" required />
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <div class="hstack gap-2 justify-content-end">
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Fermer</button>
+                                    <button type="submit" class="btn btn-success" id="add-btn">Modifier</button>
+                                    <!-- <button type="button" class="btn btn-success" id="edit-btn">Update</button> -->
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade" id="showModalPDFAdd" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-light p-3">
+                            <h5 class="modal-title" id="exampleModalLabel">Ajouter fichier PDF</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
+                        </div>
+                        <form class="tablelist-form" method="POST" action="{{route('pdf.add')}}" enctype="multipart/form-data" autocomplete="off">
+                            @csrf
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="email-field" class="form-label">PDF</label>
+                                    <input type="text" id="namePdf" name="name" maxlength="255" class="form-control" placeholder="Enter le nom du PDF" required />
+                                    <div class="invalid-feedback">Entrer le nom du PDF.</div>
+                                </div>
+                                <div class="mb-3" id="modal-id" style="display: none;">
+                                    <label for="id-field" class="form-label">ID</label>
+                                    <input type="text"  id="id" name="id" value="{{$idFiche}}" class="form-control" placeholder="ID" readonly />
+                                </div>
+                                <div>
+                                    <label for="status-field" class="form-label">Periodicite</label>
+                                    <select class="form-control" data-trigger name="periodicite" id="periodicitePdf" required>
+                                        <option value="mensuelle">Mensuelle</option>
+                                        <option value="trimestrielle">Trimestrielle</option>
+                                        <option value="semestrielle">Semestrielle</option>
+                                        <option value="annuelle">Annuelle</option>
+                                    </select>
+                                </div>
+                                <br>
+                                <div>
+                                    <label for="status-field" class="form-label">Description</label>
+                                    <input type="text" id="descriptionPdf" name="description" maxlength="255" class="form-control" placeholder="Enter la description" required />
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <div class="hstack gap-2 justify-content-end">
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Fermer</button>
+                                    <button type="submit" class="btn btn-success" id="add-btn">Ajouter</button>
+                                    <!-- <button type="button" class="btn btn-success" id="edit-btn">Update</button> -->
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         <div class="modal fade zoomIn" id="deleteRecordModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
@@ -290,6 +393,32 @@
                                 @csrf
                             <input type="text" id="idFormulaire" name="idFormulaire" hidden>
                             <input type="text" id="typeForm" name="type" hidden>
+                            <button type="submit" class="btn w-sm btn-primary" id="delete-record">Supprimer !</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade zoomIn" id="deleteRecordModal15" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="btn-close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mt-2 text-center">
+                            <lord-icon src="https://cdn.lordicon.com/gsqxdxog.json" trigger="loop" colors="primary:#25a0e2,secondary:#00bd9d" style="width:100px;height:100px"></lord-icon>
+                            <div class="mt-4 pt-2 fs-15 mx-4 mx-sm-5">
+                                <h4>Êtes vous sûr ?</h4>
+                                    <p class="text-muted mx-4 mb-0">Êtes vous sûr de vouloir supprimer ce PDF ?</p>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 justify-content-center mt-4 mb-2">
+                            <button type="button" class="btn w-sm btn-light" data-bs-dismiss="modal">Annuler</button>
+                            <form action="{{route('pdf.delete')}}" method="POST">
+                                @csrf
+                            <input type="text" id="idPdf2" name="id" hidden>
                             <button type="submit" class="btn w-sm btn-primary" id="delete-record">Supprimer !</button>
                             </form>
                         </div>
@@ -448,8 +577,20 @@
             idInput=document.getElementById("idFichier");
             idInput.value=id;
         }
+        deletePDF=function(id)
+        {
+            idInput=document.getElementById("idPdf2");
+            idInput.value=id;
+        }
+        updatePDF=function(id,name,periodicite,description)
+        {
+            $("#namePdf").val(name);
+            $("#periodicitePdf").val(periodicite);
+            $("#descriptionPdf").val(description);
+            $("#idPdf").val(id);
+        }
         updateFichier=function(id,name,periodicite,visibilite)
-        {  
+        {
             document.getElementById("idFile").value=id;
             document.getElementById("nameFile").value=name;
             selectElement=document.getElementById("periodiciteFile");

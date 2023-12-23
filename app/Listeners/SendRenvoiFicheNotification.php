@@ -10,6 +10,8 @@ use App\Mail\newRenvoiNotification;
 use App\Models\User;
 use App\Models\FormSave;
 use App\Models\FormExcel;
+use App\Models\FormPdf;
+
 class SendRenvoiFicheNotification implements ShouldQueue
 {
     use InteractsWithQueue;
@@ -22,6 +24,8 @@ class SendRenvoiFicheNotification implements ShouldQueue
         if($user)
             {   if($event->table==="formulaire")
                     $form=FormSave::on("mysql")->where("id",$file->form_id)->first();
+                else if($event->table==="pdf")
+                    $form=FormPdf::on("mysql")->where("id",$file->form_id)->first();
                 else
                     $form=FormExcel::on("mysql")->where("id",$file->form_id)->first();
                 if($form)
@@ -33,6 +37,6 @@ class SendRenvoiFicheNotification implements ShouldQueue
                 $data->id=$form->fiche_id;
                 Mail::to($user->email)->send(new newRenvoiNotification($data));
                 }
-            } 
+            }
     }
 }

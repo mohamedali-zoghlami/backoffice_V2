@@ -9,10 +9,13 @@ use App\Models\User;
 use App\Models\Role;
 use App\Models\Submission;
 use App\Models\SubmissionExcel;
+use App\Models\SubmissionPdf;
+use App\Models\FormPdf;
 use App\Models\Image;
 use App\Models\Parametre;
 use App\Models\Commentaire;
 use App\Models\CommentaireExcel;
+use App\Models\CommentairePdf;
 use App\Models\SubmissionIntern;
 use App\Models\Acteur;
 use App\Models\Domaine;
@@ -112,7 +115,8 @@ class sqlServerController extends Controller
                 $fichet=FormSave::on("sqlsrv")->where("fiche_id",$fiche->id)->get();
                 $fiche->forms=$fichet->count();
                 $fichette=FormExcel::on("sqlsrv")->where("fiche_id",$fiche->id)->get();
-                $fiche->fichier=$fichette->count();
+                $pdfs=FormPdf::on("sqlsrv")->where("fiche_id",$fiche->id)->get();
+                $fiche->fichier=$fichette->count()+$pdfs->count();
                 $fiche->draft=0;
                 $fiche->sub=0;
                 $fiche->renv=0;
@@ -135,6 +139,21 @@ class sqlServerController extends Controller
                 {   $periodicity=HomeController::time($form->periodicite,"sqlsrv");
                     $year=HomeController::year($periodicity);
                     $fast=SubmissionExcel::on("sqlsrv")->where("form_id",$form->id)->where("acteur_id",$request->acteur)->where("periodicity",$periodicity)->where("year",$year)->first();
+                    if($fast)
+                        {
+                            if($fast->type==="final")
+                                $fiche->sub+=1;
+                            else if($fast->type==="draft")
+                                $fiche->draft+=1;
+                            else
+                                $fiche->renv+=1;
+                        }
+
+                }
+                foreach($fichette as $form)
+                {   $periodicity=HomeController::time($form->periodicite,"sqlsrv");
+                    $year=HomeController::year($periodicity);
+                    $fast=SubmissionPdf::on("sqlsrv")->where("form_id",$form->id)->where("acteur_id",$request->acteur)->where("periodicity",$periodicity)->where("year",$year)->first();
                     if($fast)
                         {
                             if($fast->type==="final")
@@ -205,6 +224,7 @@ class sqlServerController extends Controller
     {   $intern=submissionIntern::on("sqlsrv")->with("form")->where("type_soumission","final")->orderBy("created_at");
         $files=submission::on("sqlsrv")->with("form")->where("type_soumission","final")->orderBy("created_at");
         $fichier=SubmissionExcel::on("sqlsrv")->with("form")->where("type","final")->orderBy("created_at");
+        $pdf=SubmissionPdf::on("sqlsrv")->with("form")->where("type","final")->orderBy("created_at");
         if($request->name)
         {   $formName = $request->input('name');
             $files=$files->whereHas('form', function ($query) use ($formName) {
@@ -214,6 +234,9 @@ class sqlServerController extends Controller
                 $query->where('name',"like", "%".$formName."%");
             });
             $intern=$intern->whereHas("form",function ($query) use ($formName) {
+                $query->where('name',"like", "%".$formName."%");
+            });
+            $pdf=$pdf->whereHas("form",function ($query) use ($formName) {
                 $query->where('name',"like", "%".$formName."%");
             });
         }
@@ -228,26 +251,36 @@ class sqlServerController extends Controller
             $intern=$intern->whereHas('form', function ($query) use ($id) {
                 $query->where("fiche_id",$id);
             });
+            $pdf=$pdf->whereHas('form', function ($query) use ($id) {
+                $query->where("fiche_id",$id);
+            });
         }
         if($request->acteur)
         {
             $files=$files->where("operateur_id",$request->acteur);
             $fichier=$fichier->where("acteur_id",$request->acteur);
             $intern=$intern->where("operateur_id",$request->acteur);
+            $pdf=$pdf->where("operateur_id",$request->acteur);
+
         }
         if($request->annee)
         {  $files=$files->where("year",$request->annee);
             $fichier=$fichier->where("year",$request->annee);
             $intern=$intern->where("year",$request->annee);
+            $pdf=$pdf->where("year",$request->annee);
+
         }
         if($request->periodicite)
         {  $files=$files->where("periodicity",$request->periodicite);
             $fichier=$fichier->where("periodicity",$request->periodicite);
             $intern=$intern->where("periodicity",$request->periodicite);
+            $pdf=$pdf->where("periodicity",$request->periodicite);
+
         }
         $files=$files->paginate(10);
         $fichier=$fichier->paginate(10);
         $intern=$intern->paginate(10);
+        $pdf=$pdf->paginate(10);
         foreach($files as $file)
         {
             $opp=Acteur::on("sqlsrv")->where("id",$file->operateur_id)->first();
@@ -272,11 +305,19 @@ class sqlServerController extends Controller
             else
                 $file->name=$opp->nom_acteur;
         }
+        foreach($pdf as $file)
+        {
+            $opp=Acteur::on("sqlsrv")->where("id",$file->acteur_id)->first();
+            if(!$opp)
+                $file->name="Admin";
+            else
+                $file->name=$opp->nom_acteur;
+        }
         if($request->ajax())
-            return view("pages.datapartial",["files"=>$files,"fichiers"=>$fichier,"intern"=>$intern])->render();
+            return view("pages.datapartial",["files"=>$files,"fichiers"=>$fichier,"intern"=>$intern,"pdf"=>$pdf])->render();
         $acteur=Acteur::on("sqlsrv")->orderBy("nom_acteur")->get();
         $fiches=Fiche::on("sqlsrv")->orderBy("name")->get();
-        return view("pages.data",["files"=>$files,"intern"=>$intern,"acteurs"=>$acteur,"fichiers"=>$fichier,"fiches"=>$fiches]);
+        return view("pages.data",["files"=>$files,"intern"=>$intern,"acteurs"=>$acteur,"fichiers"=>$fichier,"pdf"=>$pdf,"fiches"=>$fiches]);
 
     }
     public function renvoyer(Request $request)
@@ -293,6 +334,8 @@ class sqlServerController extends Controller
             $fichier=submission::on("mysql")->where("id",$request->id)->first();
         if($request->type==="fichier")
             $fichier=SubmissionExcel::on("mysql")->where("id",$request->id)->first();
+        if($request->type==="pdf")
+            $fichier=SubmissionPdf::on("mysql")->where("id",$request->id)->first();
         if(!$fichier)
             return redirect()->back()->with("error","Soumission inexistante !");
         if($fichier->type==="refaire")
@@ -303,6 +346,8 @@ class sqlServerController extends Controller
         event(new RenvoiFiche($fichier,$request->type));
         if($request->type==="formulaire")
             $comm= new Commentaire();
+        else if($request->type==="pdf")
+            $comm= new CommentairePdf();
         else
             $comm= new CommentaireExcel();
         $comm->comment=$request->commentaire;

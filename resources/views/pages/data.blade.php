@@ -105,7 +105,7 @@
                                             <li class="nav-item">
                                                 <form method="POST" action="/deleteType">
                                                     @csrf
-                                                    <button type="submit" style="background-color:transparent"  class="nav-link @if(session()->has('fichier')===false&&session()->has('intern')===false) active @endif fw-semibold" data-bs-toggle="tab" id="formButton" role="tab" @if(session()->has('fichier')===false&&session()->has('intern')===false) disabled @endif>
+                                                    <button type="submit" style="background-color:transparent"  class="nav-link @if(session()->has('fichier')===false&&session()->has('intern')===false&&session()->has('pdf')===false) active @endif fw-semibold" data-bs-toggle="tab" id="formButton" role="tab" @if(session()->has('fichier')===false&&session()->has('intern')===false&&session()->has('pdf')===false) disabled @endif>
                                                     Formulaires publique
                                                 </button>
                                             </form>
@@ -123,6 +123,14 @@
                                                     @csrf
                                                 <button type="submit" style="background-color:transparent"  class="nav-link @if(session()->has('intern')) active @endif fw-semibold" data-bs-toggle="tab" id="fileButton"  role="tab" @if(session()->has("intern")) disabled @endif>
                                                     Formulaires Interne
+                                                </button>
+                                                </form>
+                                            </li>
+                                            <li class="nav-item">
+                                                <form method="POST" action="/setInt2">
+                                                    @csrf
+                                                <button type="submit" style="background-color:transparent"  class="nav-link @if(session()->has('pdf')) active @endif fw-semibold" data-bs-toggle="tab" id="fileButton"  role="tab" @if(session()->has("pdf")) disabled @endif>
+                                                    Fichier PDF
                                                 </button>
                                                 </form>
                                             </li>
@@ -475,14 +483,14 @@
             $("#acteurName").val(form.name);
             $("#periodName").val(form.periodicity+"  - "+form.year)
         }
-        download=function(file)
+        download=function(file,type)
         {   console.log(file)
              $.ajax({
                 url:"/file/download",
                 type:'GET',
                 data:{
                     id:file,
-                    type:"data",
+                    type:type,
                 },
                 success: function(response) {
                     if (response.error)

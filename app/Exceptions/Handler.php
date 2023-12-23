@@ -7,6 +7,8 @@ use Throwable;
 use Illuminate\Database\ConnectionException;
 use Illuminate\Database\QueryException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Auth\AuthenticationException;
 
 class Handler extends ExceptionHandler
 {
@@ -44,11 +46,23 @@ class Handler extends ExceptionHandler
             return response()->view('errors.500', [], 500);
         }
         if ($exception instanceof QueryException && ($exception->getCode()===2002||$exception->getCode()===2006) ) {
+            if(Auth::check())
             return response()->view('errors.500', [], 500);
+            else
+            return response()->view("errors.auth-500");
+        }
+        if ($exception instanceof AuthenticationException) {
+            return parent::render($request, $exception);
         }
         if ($exception instanceof NotFoundHttpException) {
             return response()->view('errors.404', [], 404);
         }
+        if ($exception instanceof \Exception) {
+            if(Auth::check())
+            return response()->view('errors.500', [], 500);
+            else
+                return response()->view("errors.auth-500");
+            }
         return parent::render($request, $exception);
     }
     /**

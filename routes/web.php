@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Models\FormExcel;
 use App\Models\SubmissionExcel;
+use App\Models\FormPdf;
+use App\Models\SubmissionPdf;
 use Illuminate\Http\Request;
 /*
 |--------------------------------------------------------------------------
@@ -21,6 +23,8 @@ Auth::routes(['register' => false]);
 
   Route::middleware(['auth','web'])->group(function () {
     Route::get('/home',function(){return view("layouts.app");})->name('home');
+    Route::get('/',function(){return view("layouts.app");})->name('home');
+
         Route::get('/users', [App\Http\Controllers\adminController::class, 'user'])->name('user');
         Route::post('/user/create', [App\Http\Controllers\adminController::class,'userCreate'])->name('user.create');
         Route::post('/user/delete', [App\Http\Controllers\adminController::class,'userDelete'])->name('user.delete');
@@ -76,6 +80,22 @@ Auth::routes(['register' => false]);
                     $data->name=$name."_".$data->periodicity."_".$data->year;
                 }
         }
+        else if($request->type==="pdf")
+        {
+            $data=SubmissionPdf::on("sqlsrv")->where("id",$request->id)->first();
+            $data->mime="application/pdf";
+            $name=FormPdf::on("sqlsrv")->where("id",$data->form_id)->first();
+            $data->name=$name?$name->name."_".$data->periodicity."_".$data->year:"inconnu";
+            $data->excel=base64_decode($data->pdf);
+        }
+        else if($request->type==="pdf2")
+        {
+            $data=SubmissionPdf::on("mysql")->where("id",$request->id)->first();
+            $data->mime="application/pdf";
+            $name=FormPdf::on("mysql")->where("id",$data->form_id)->first();
+            $data->name=$name?$name->name."_".$data->periodicity."_".$data->year:"inconnu";
+            $data->excel=base64_decode($data->pdf);
+        }
         else if($request->type==="form1")
         {
             $data = FormExcel::on("sqlsrv")->find($request->id);
@@ -86,10 +106,15 @@ Auth::routes(['register' => false]);
         $file_contents=$data->excel;
         $type = "xlsx";
         $mime= 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-        if ($data->mime === 'application/vnd.ms-excel' || $data->mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'||$request->type==="data") {
+        if ($data->mime === 'application/vnd.ms-excel' || $data->mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'||$request->type==="data"||$request->type==="pdf"||$request->type==="pdf2") {
             if ($data->mime === 'application/vnd.ms-excel') {
             $type = "xls";
             $mime='application/vnd.ms-excel';
+            }
+            else if($data->mime === "application/pdf")
+            {
+                $type="pdf";
+                $mime=$data->mime;
             }
         }
             return response($file_contents)
@@ -113,6 +138,9 @@ Auth::routes(['register' => false]);
         Route::post("/formule/create",[App\Http\Controllers\adminController::class, 'formulesCreate'])->name("formules.create");
         Route::post("/formule/update",[App\Http\Controllers\adminController::class, 'formulesUpdate'])->name("formules.update");
         Route::post("/formule/delete",[App\Http\Controllers\adminController::class, 'formulesDelete'])->name("formules.delete");
+        Route::post("/pdf/create",[App\Http\Controllers\adminController::class, 'pdfAdd'])->name("pdf.add");
+        Route::post("/pdf/update",[App\Http\Controllers\adminController::class, 'pdfUpdate'])->name("pdf.update");
+        Route::post("/pdf/delete",[App\Http\Controllers\adminController::class, 'pdfDelete'])->name("pdf.delete");
         Route::get("/getEveryForm/{id}",[App\Http\Controllers\adminController::class, 'getEveryForm']);
         Route::get("/getEveryFormSqlsrv/{id}",[App\Http\Controllers\adminController::class, 'getEveryFormSql']);
         Route::post("/renvoiSub",[App\Http\Controllers\sqlServerController::class, 'renvoyer'])->name("renvoi");
@@ -122,6 +150,7 @@ Auth::routes(['register' => false]);
         Route::post('/reouvrirForm', [App\Http\Controllers\adminController::class, 'reouvrir'])->name("formulaire.reouvrir");
         Route::post('/setBrou', [App\Http\Controllers\adminController::class, 'setBrou']);
         Route::post('/setInt', [App\Http\Controllers\adminController::class, 'setInt']);
+        Route::post('/setInt2', [App\Http\Controllers\adminController::class, 'setInt2']);
         Route::get('/suivi', [App\Http\Controllers\adminController::class, 'suivi'])->name("suivi");
         Route::post('/deleteType', [App\Http\Controllers\adminController::class, 'deleteType']);
         Route::get("/data",[App\Http\Controllers\sqlServerController::class, 'submissionData'])->name("data");
@@ -173,7 +202,6 @@ Auth::routes(['register' => false]);
 
 Route::post("/resetPasswordCustom",[App\Http\Controllers\Auth\ResetPasswordController::class,"resetPassword"])->name("password.customReset");
 Auth::routes();
-
 Route::get('/images/{filename}', function ($filename) {
     $path = public_path('logo_images/' . $filename);
     if (file_exists($path)) {

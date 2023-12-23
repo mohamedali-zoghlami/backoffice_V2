@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 use App\Models\FormSave;
+use App\Models\FormPdf;
+
 use App\Models\Groupe;
 use App\Models\GroupeForm;
 use App\Models\Commentaire;
 use App\Models\CommentaireExcel;
 use Illuminate\Pagination\LengthAwarePaginator;
-
+use App\Models\SubmissionPdf;
 use App\Models\FormIntern;
 use App\Models\FormExcel;
 use App\Models\SystemTime;
@@ -411,12 +413,14 @@ class adminController extends Controller
         $forms=FormSave::on('mysql')->where("fiche_id",$id);
         $files=FormExcel::on('mysql')->where("fiche_id",$id);
         $intern=FormIntern::on("sqlsrv")->where("fiche_id",$id);
+        $pdf=FormPdf::on("mysql")->where("fiche_id",$id);
         if($request->has("periodicite"))
             {
                  if($request->periodicite!==null)
                     {$forms=$forms->where("periodicite",$request->periodicite);
                     $files=$files->where("periodicite",$request->periodicite);
                     $intern=$intern->where("periodicite",$request->periodicite);
+                    $pdf=$pdf->where("periodicite",$request->periodicite);
                     }
             }
         if($request->has("visibility"))
@@ -430,13 +434,17 @@ class adminController extends Controller
         {   $forms=$forms->where("name","like","%".$request->name."%");
             $files=$files->where("name","like","%".$request->name."%");
             $intern=$intern->where("name","like","%".$request->name."%");
+            $pdf=$pdf->where("name","like","%".$request->name."%");
+
         }
         $forms=$forms->paginate(10);
         $files=$files->paginate(10);
         $intern=$intern->paginate(10);
+        $pdf=$pdf->paginate(10);
+
         if($request->ajax())
-            return view('pages.formulairespartial',['forms'=>$forms,"files"=>$files,"intern"=>$intern,"idFiche"=>$id])->render();
-       return view('pages.formulaires',['forms'=>$forms,"files"=>$files,"intern"=>$intern,"idFiche"=>$id]);
+            return view('pages.formulairespartial',['forms'=>$forms,"pdf"=>$pdf,"files"=>$files,"intern"=>$intern,"idFiche"=>$id])->render();
+       return view('pages.formulaires',['forms'=>$forms,"pdf"=>$pdf,"files"=>$files,"intern"=>$intern,"idFiche"=>$id]);
     }
     public function formulaireDelete(Request $request)
     {   if(auth()->user()->role!=="1")
@@ -526,6 +534,8 @@ class adminController extends Controller
     {
         $request->session()->put('fichier',"true");
         $request->session()->forget("intern");
+        $request->session()->forget('pdf');
+
             $previousUrl = url()->previous();
             $parsedUrl = parse_url($previousUrl);
             $queryParams = [];
@@ -544,7 +554,28 @@ class adminController extends Controller
     }
     public function setInt(Request $request)
     {   $request->session()->forget('fichier');
+        $request->session()->forget('pdf');
         $request->session()->put('intern',"true");
+
+            $previousUrl = url()->previous();
+            $parsedUrl = parse_url($previousUrl);
+            $queryParams = [];
+
+            if (isset($parsedUrl['query'])) {
+                parse_str($parsedUrl['query'], $queryParams);
+            }
+            $queryParams['page'] = 1;
+
+            // Rebuild the URL with the modified query parameters
+            $newUrl = $parsedUrl['path'] . '?' . http_build_query($queryParams);
+
+            return redirect($newUrl);
+
+    }
+    public function setInt2(Request $request)
+    {   $request->session()->forget('fichier');
+        $request->session()->forget('intern');
+        $request->session()->put('pdf',"true");
 
             $previousUrl = url()->previous();
             $parsedUrl = parse_url($previousUrl);
@@ -566,6 +597,7 @@ class adminController extends Controller
     {
         $request->session()->forget('fichier');
         $request->session()->forget("intern");
+        $request->session()->forget('pdf');
         $previousUrl = url()->previous();
         $parsedUrl = parse_url($previousUrl);
             $queryParams = [];
@@ -773,6 +805,79 @@ class adminController extends Controller
         $formules->setConnection('mysql')->delete();
         return redirect()->back()->with("success","Formule correctement supprimée!");
     }
+    public function pdfAdd(Request $request)
+    {
+        if(auth()->user()->role!=="1")
+        {$role1=Role::on("sqlsrv")->find(auth()->user()->role);
+        if(!$role1)
+            return redirect()->back()->with('error','Role introuvable !');
+        if(!str_contains($role1->privilege,"c"))
+            return redirect()->back()->with('error',"Vous n'avez pas le droit de création !");
+    }
+        if(!$request->has("description"))
+            return redirect()->back()->with("error","Description est obligatoire");
+        if(!$request->has("periodicite"))
+            return redirect()->back()->with("error","Periodicite est obligatoire");
+        if(!$request->has("name"))
+            return redirect()->back()->with("error","Nom est obligatoire");
+        if(!$request->has("id"))
+            return redirect()->back()->with("error","Nom est obligatoire");
+        $formules=FormPdf::on("mysql")->where("fiche_id",$request->id)->where("name",$request->name)->first();
+        if($formules)
+            return redirect()->back()->with("error","Fichier pdf existe déjà !");
+        $formule=new FormPdf();
+        $formule->fiche_id=$request->id;
+        $formule->periodicite=$request->periodicite;
+        $formule->name=$request->name;
+        $formule->description=$request->description;
+        $formule->setConnection('mysql')->save();
+        return redirect()->back()->with("success","Fichier pdf correctement ajoutée !");
+    }
+    public function pdfUpdate(Request $request)
+    {
+        if(auth()->user()->role!=="1")
+        {$role1=Role::on("sqlsrv")->find(auth()->user()->role);
+        if(!$role1)
+            return redirect()->back()->with('error','Role introuvable !');
+        if(!str_contains($role1->privilege,"u"))
+            return redirect()->back()->with('error',"Vous n'avez pas le droit de modification !");
+
+    }
+        if(!$request->has("id"))
+            return redirect()->back()->with("error","Erreur");
+        $pdf=FormPdf::on("mysql")->find($request->id);
+        if(!$pdf)
+            return redirect()->back()->with("error","Fichier Pdf Introuvable");
+        $pdf2=FormPdf::on("mysql")->where("fiche_id",$pdf->fiche_id)->where("id","!=",$request->id)->where("name",$request->name)->first();
+        if($pdf2)
+            return redirect()->back()->with("error","Fichier Pdf avec ce nom existe déja");
+        $pdf->name=$request->name;
+        $pdf->periodicite=$request->periodicite;
+        $pdf->description=$request->description;
+        $pdf->setConnection('mysql')->save();
+        return redirect()->back()->with("success","Formules modifiée !");
+    }
+    public function pdfDelete(Request $request)
+    {
+        if(auth()->user()->role!=="1")
+        {$role1=Role::on("sqlsrv")->find(auth()->user()->role);
+        if(!$role1)
+            return redirect()->back()->with('error','Role introuvable !');
+        if(!str_contains($role1->privilege,"d"))
+            return redirect()->back()->with('error',"Vous n'avez pas le droit de suppression !");
+
+    }
+        if(!$request->has("id"))
+            return redirect()->back()->with("error","Erreur de suppression");
+        $pdf=FormPdf::on("mysql")->where("id",$request->id)->first();
+        if(!$pdf)
+            return redirect()->back()->with("error","Fichier PDF est inexistant");
+        $sub=SubmissionPdf::on('mysql')->where("form_id",$id)->first();
+        if($sub)
+            return redirect()->back()->with('error','Fichier soumis est ne peut pas être supprimé !');
+        $pdf->setConnection('mysql')->delete();
+        return redirect()->back()->with("success","Fichier PDF est correctement supprimée!");
+    }
     public function getEveryForm($id)
     {
         $fiches=Fiche::on('mysql')->where("operateur","like",'%"'.$id.'"%')->pluck("id");
@@ -963,12 +1068,16 @@ class adminController extends Controller
     {
         $files=submission::on("mysql")->with("form")->where("type","final")->orderBy("created_at");
         $fichier=SubmissionExcel::on("mysql")->with("form")->where("type","final")->orderBy("created_at");
+        $pdf=SubmissionPdf::on("mysql")->with("form")->where("type","final")->orderBy("created_at");
         if($request->name)
         {   $formName = $request->input('name');
             $files=$files->whereHas('form', function ($query) use ($formName) {
                 $query->where('name',"like", "%".$formName."%");
             });
             $fichier=$fichier->whereHas("form",function ($query) use ($formName) {
+                $query->where('name',"like", "%".$formName."%");
+            });
+            $pdf=$pdf->whereHas("form",function ($query) use ($formName) {
                 $query->where('name',"like", "%".$formName."%");
             });
         }
@@ -980,24 +1089,34 @@ class adminController extends Controller
             $fichier=$fichier->whereHas('form', function ($query) use ($id) {
                 $query->where("fiche_id",$id);
             });
+            $pdf=$pdf->whereHas('form', function ($query) use ($id) {
+                $query->where("fiche_id",$id);
+            });
 
         }
         if($request->acteur)
         {
             $files=$files->where("operateur_id",$request->acteur);
             $fichier=$fichier->where("acteur_id",$request->acteur);
+            $pdf=$pdf->where("acteur_id",$request->acteur);
+
         }
         if($request->annee)
         {  $files=$files->where("year",$request->annee);
             $fichier=$fichier->where("year",$request->annee);
+            $pdf=$pdf->where("year",$request->annee);
 
         }
         if($request->periodicite)
         {  $files=$files->where("periodicity",$request->periodicite);
             $fichier=$fichier->where("periodicity",$request->periodicite);
+            $pdf=$pdf->where("periodicity",$request->periodicite);
+
         }
         $files=$files->paginate(10);
         $fichier=$fichier->paginate(10);
+        $pdf=$pdf->paginate(10);
+
         foreach($files as $file)
         {
             $opp=Acteur::on("mysql")->where("id",$file->operateur_id)->first();
@@ -1018,11 +1137,19 @@ class adminController extends Controller
             $comm=CommentaireExcel::on("mysql")->where("submission_id",$file->id)->get();
             $file->comm=$comm;
         }
+        foreach($pdf as $file)
+        {
+            $opp=Acteur::on("sqlsrv")->where("id",$file->acteur_id)->first();
+            if(!$opp)
+                $file->name="Admin";
+            else
+                $file->name=$opp->nom_acteur;
+        }
         if($request->ajax())
-            return view("pages.dataCloudpartial",["files"=>$files,"fichiers"=>$fichier,])->render();
+            return view("pages.dataCloudpartial",["files"=>$files,"fichiers"=>$fichier,"pdf"=>$pdf])->render();
         $acteur=Acteur::on("mysql")->orderBy("nom_acteur")->get();
         $fiches=Fiche::on("mysql")->orderBy("name")->get();
-        return view("pages.dataCloud",["files"=>$files,"acteurs"=>$acteur,"fichiers"=>$fichier,"fiches"=>$fiches]);
+        return view("pages.dataCloud",["files"=>$files,"acteurs"=>$acteur,"fichiers"=>$fichier,"fiches"=>$fiches,"pdf"=>$pdf]);
 
     }
     public function reouvrir(Request $request)
@@ -1043,30 +1170,39 @@ class adminController extends Controller
         $annee=$request->annee;
         $type=$request->type;
         if($type==="fichier")
-            $sub=SubmissionExcel::on("mysql")->where("user_id",$user->id)->where("form_id",$form_id)->where("year",$annee)->where("periodicity",$periodicite)->first();
+            $sub=SubmissionExcel::on("mysql")->where("acteur_id",$request->acteur)->where("form_id",$form_id)->where("year",$annee)->where("periodicity",$periodicite)->first();
+        else if($type==="pdf")
+            $sub=SubmissionPdf::on("mysql")->where("acteur_id",$request->acteur)->where("form_id",$form_id)->where("year",$annee)->where("periodicity",$periodicite)->first();
         else
-         $sub=submission::on("mysql")->where("user_id",$user->id)->where("form_id",$form_id)->where("year",$annee)->where("periodicity",$periodicite)->first();
-        if(!$sub)
+            $sub=submission::on("mysql")->where("operateur_id",$request->acteur)->where("form_id",$form_id)->where("year",$annee)->where("periodicity",$periodicite)->first();
+            if(!$sub)
         {
-            $sub= $type==="fichier"?new SubmissionExcel():new submission();
             if($type==="fichier")
-            {
+            {   $sub=new SubmissionExcel();
                 $sub->acteur_id=$request->acteur;
                 $sub->excel="";
                 $sub->mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
             }
+            else if($type==="pdf")
+            { $sub=new SubmissionPdf();
+                $sub->acteur_id=$request->acteur;
+                $sub->pdf="";
+
+            }
             else
-            {
+            {   $sub=new submission();
                 $sub->operateur_id=$request->acteur;
                 $sub->formHistoric_id=0;
                 $sub->commentaire="";
                 $sub->formJson="{}";
                 $sub->ESTIMATED="Y";
             }
+
             $sub->user_id=$user->id;
             $sub->form_id=$form_id;
             $sub->periodicity=$periodicite;
             $sub->year=$annee;
+            if($type!=="pdf")
             $sub->historique="L";
             $sub->type="refaire";
 
@@ -1075,11 +1211,11 @@ class adminController extends Controller
 
         }
         else if($sub->type==="draft")
-        {   $sub->ESTIMATED="Y";
+        {
+            $sub->ESTIMATED="Y";
             $sub->type="refaire";
             $sub->setConnection("mysql")->save();
             return response()->json(["success"=>"Formulaire ré-ouvert avec succès !"]);
-
         }
         else if($sub->type==="final")
         {
@@ -1496,10 +1632,12 @@ class adminController extends Controller
         $id=$request->id;
         $forms=FormSave::on("sqlsrv")->where("fiche_id",$id);
         $excel=FormExcel::on("sqlsrv")->where("fiche_id",$id);
+        $pdf=FormPdf::on("sqlsrv")->where("fiche_id",$id);
         if($request->name)
             {
                 $forms=$forms->where("name","like","%".$request->name."%");
                 $excel=$excel->where("name","like","%".$request->name."%");
+                $pdf=$pdf->where("name","like","%".$request->name."%");
             }
         if($request->periodicite)
         {
@@ -1521,9 +1659,12 @@ class adminController extends Controller
             }
             $forms=$forms->where("periodicite",$pe);
             $excel=$excel->where("periodicite",$pe);
+            $pdf=$pdf->where("periodicite",$pe);
+
         }
         $forms=$forms->get();
         $excel=$excel->get();
+        $pdf=$pdf->get();
         $count=new \stdClass();
         $count->faire=0;
         $count->cours=0;
@@ -1543,7 +1684,8 @@ class adminController extends Controller
             $form->source="publique";
             $sub=submission::on("sqlsrv")->where("form_id",$form->id)->where("operateur_id",$acteur)->where("periodicity",$periodicite)->where("year",$year)->first();
             if($sub)
-                    {$form->dataJson=$sub->formJson;
+                    {
+                    $form->dataJson=$sub->formJson;
                     $form->type=$sub->$a;
                     $form->created_at=$sub->created_at;
                     $form->updated_at=$sub->updated_at;
@@ -1552,6 +1694,9 @@ class adminController extends Controller
                     else if($form->type==='final')
                         {$count->env+=1;
                         $form->sub_id=$sub->id;
+                        $com=Commentaire::on("sqlsrv")->where("submission_id",$sub->id)->get();
+                        if($com->count()>0)
+                            $form->commentaire=$com;
                         }
                     }
             else
@@ -1585,6 +1730,9 @@ class adminController extends Controller
                     else if($form->type==='final')
                         {$count->env+=1;
                         $form->sub_id=$sub->id;
+                        $com=CommentaireExcel::on("sqlsrv")->where("submission_id",$form->sub_id)->get();
+                        if($com->count()>0)
+                            $form->commentaire=$com;
                         }
                     }
             else
@@ -1593,10 +1741,46 @@ class adminController extends Controller
                     $count->faire+=1;}
 
         }
+        foreach($pdf as $form)
+        {
+            if($request->periodicite)
+                $periodicite=$request->periodicite;
+            else
+                $periodicite=HomeController::time($form->periodicite,"sqlsrv");
+            if($request->year)
+                $year=$request->year;
+            else
+                $year=HomeController::year($periodicite);
+            $form->year=$year;
+            $form->date_to=$periodicite;
+            $a="type";
+            $form->source="publique";
+            $sub=SubmissionPdf::on("sqlsrv")->where("form_id",$form->id)->where("acteur_id",$acteur)->where("periodicity",$periodicite)->where("year",$year)->first();
+            if($sub)
+                    {
+                    $form->type=$sub->$a;
+                    $form->created_at=$sub->created_at;
+                    $form->updated_at=$sub->updated_at;
+                    if($form->type==="draft")
+                        $count->cours+=1;
+                    else if($form->type==='final')
+                        {$count->env+=1;
+                        $form->sub_id=$sub->id;
+                        }
+                    }
+            else
+                    {
+                    $form->type="faire";
+                    $count->faire+=1;
+
+                    }
+
+
+        }
         $acteurName=Acteur::on("sqlsrv")->find($request->acteur)->nom_acteur;
         if($request->ajax())
-            return view("pages.soumissionDetailpartial",["forms"=>$forms,"count"=>$count,"acteur"=>$acteur,"excel"=>$excel])->render( );
-        return view("pages.soumissionDetail",["forms"=>$forms,"count"=>$count,"acteur"=>$acteur,"acteurName"=>$acteurName,"excel"=>$excel]);
+            return view("pages.soumissionDetailpartial",["forms"=>$forms,"pdf"=>$pdf,"count"=>$count,"acteur"=>$acteur,"excel"=>$excel])->render( );
+        return view("pages.soumissionDetail",["forms"=>$forms,"pdf"=>$pdf,"count"=>$count,"acteur"=>$acteur,"acteurName"=>$acteurName,"excel"=>$excel]);
     }
     public function soumissionIntern(Request $request)
     {
@@ -1663,7 +1847,7 @@ class adminController extends Controller
                     }
         }
         if($request->ajax())
-            return view("pages.soumissionDetailpartial",["forms"=>$forms,"count"=>$count,"acteur"=>$acteur,"excel"=>[]])->render( );
-        return view("pages.soumissionDetail",["forms"=>$forms,"count"=>$count,"acteur"=>$acteur,"excel"=>[]]);
+            return view("pages.soumissionDetailpartial",["forms"=>$forms,"count"=>$count,"acteur"=>$acteur,"excel"=>[],"pdf"=>[]])->render( );
+        return view("pages.soumissionDetail",["forms"=>$forms,"count"=>$count,"acteur"=>$acteur,"excel"=>[],"pdf"=>[]]);
     }
 }

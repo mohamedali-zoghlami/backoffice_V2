@@ -47,6 +47,10 @@
                                     <button class="btn btn-link position-absolute end-0 top-0 text-decoration-none text-muted password-addon" type="button" id="confirm-password-input"><i class="ri-eye-fill align-middle"></i></button>
                                 </div>
                             </div>
+                            <div class="mb-3 mx-3">
+                                <div class="g-recaptcha" data-sitekey="{{ env('GOOGLE_RECAPTCHA_KEY') }}">
+                                </div>
+                            </div>
                             <div id="captchaError" class="alert alert-danger text-center d-none" role="alert">
 
                             </div>
@@ -109,6 +113,9 @@
             $("#captchaError").removeClass("d-none").text("Mot de passe doit contenir une lettre majuscule, une miniscule, un chiffre et un caractère spécial !");
         else if(passwordField.value!==confirmedField.value)
             $("#captchaError").removeClass("d-none").text("Mot de passe et confirmer mot de passe ne sont pas identique !");
+        else if (grecaptcha.getResponse() === "") {
+            $("#captchaError").removeClass("d-none").text("Captcha est obligatoire !");
+        }
         else {
             this.submit();
         }
