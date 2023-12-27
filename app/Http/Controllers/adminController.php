@@ -1471,11 +1471,14 @@ class adminController extends Controller
         $groupes=GroupeForm::on("mysql")->where("groupe_id",$request->id);
         $formsWithPriority = GroupeForm::on("mysql")->where("type","formulaire")->get()->pluck("form_save_id");
         $fichierWithPriority =  GroupeForm::on("mysql")->where("type","fichier")->get()->pluck("form_save_id");
+        $pdfWithPriority =  GroupeForm::on("mysql")->where("type","pdf")->get()->pluck("form_save_id");
         $form=GroupeForm::on("mysql")->where("groupe_id",$request->id)->orderBy("priorite")->get();
         foreach($form as $f)
         {
             if($f->type==="formulaire")
                 $fet=FormSave::on("mysql")->find($f->form_save_id);
+            else if($f->type==="pdf")
+                $fet=FormPdf::on("mysql")->find($f->form_save_id);
             else
                 $fet=FormExcel::on("mysql")->find($f->form_save_id);
             if($fet)
@@ -1493,18 +1496,17 @@ class adminController extends Controller
         $form->setPath(url()->current());
         $form->appends(['name' => $request->name]);
 
-
         if ($request->ajax()) {
             return view('pages.groupesDetailpartial', compact('form'))->render();
         }
 
         $forms=FormSave::on("mysql")->whereNotIn("id",$formsWithPriority)->orderBy("name")->get();
-
         $fichier=FormExcel::on("mysql")->whereNotIn("id",$fichierWithPriority)->orderBy("name")->get();
+        $pdf=FormPdf::on("mysql")->whereNotIn("id",$pdfWithPriority)->orderBy("name")->get();
         $largestPriorite = GroupeForm::on("mysql")->where("groupe_id",$request->id)->max('priorite');
             if(!$largestPriorite)
                 $largestPriorite=0;
-        return view('pages.groupesDetail',['form'=>$form,"fichier"=>$fichier,'forms'=>$forms,'priorite'=>$largestPriorite,'groupe_id'=>$request->id]);
+        return view('pages.groupesDetail',['form'=>$form,"fichier"=>$fichier,"pdf"=>$pdf,'forms'=>$forms,'priorite'=>$largestPriorite,'groupe_id'=>$request->id]);
 
     }
     public function groupDetailsCreate(Request $request)

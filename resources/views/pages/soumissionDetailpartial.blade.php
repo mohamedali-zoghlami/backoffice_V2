@@ -133,7 +133,7 @@
                         <div class="flex-grow-1 mt-3">
 
                             <button onclick="soumissionAutomatique({{json_encode($sub)}},{{json_encode($acteur)}})" class="btn btn-sm btn-primary">Soumission automatique</button>
-                            <button onclick="reouvrir({{json_encode($sub)}})" class="btn btn-sm btn-warning ">Reouvrir</button>
+                            <button onclick="reouvrir({{json_encode($sub)}},'formulaire')" class="btn btn-sm btn-warning ">Reouvrir</button>
                          </div>
                         @endif
                     </div>
@@ -182,7 +182,7 @@
                             <button onclick="commentaire({{json_encode($sub)}})" class="btn btn-sm btn-success">Commentaires</button>
                             @endif
                             <button onclick="modification({{json_encode($sub)}},'publique')" class="btn btn-sm btn-warning">Modifier</button>
-                            <button onclick="renvoyer({{json_encode($sub)}})" data-bs-toggle="modal" data-bs-target="#showModalComm" class="btn btn-sm btn-danger">Renvoyer</button>
+                            <button onclick="renvoyer({{json_encode($sub)}},'formulaire')" data-bs-toggle="modal" data-bs-target="#showModalComm" class="btn btn-sm btn-danger">Renvoyer</button>
                         </div>
                         @else
                         <div class="flex-grow-1 mt-3">

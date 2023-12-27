@@ -120,7 +120,7 @@
                                                 </form>
                                             </li>
                                             <li class="nav-item">
-                                                <form method="POST" action="/setType2">
+                                                <form method="POST" action="/setInt2">
                                                     @csrf
                                                     <button type="submit" style="background-color:transparent"  class="nav-link @if(session()->has('pdf')) active @endif fw-semibold" data-bs-toggle="tab" id="fileButton"  role="tab" @if(session()->has("pdf")) disabled @endif>
                                                     Fichiers

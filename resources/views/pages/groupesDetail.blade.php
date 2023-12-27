@@ -50,7 +50,8 @@
                                     <div class="col-sm-auto">
                                         <div>
                                             <button type="button" onclick="createForm()" class="btn btn-primary add-btn" data-bs-toggle="modal" id="create-btn" data-bs-target="#showModal"><i class="ri-add-line align-bottom me-1"></i> Ajouter Formulaire</button>
-                                            <button type="button" onclick="createForm2()" class="btn btn-success add-btn" data-bs-toggle="modal" id="create-btn" data-bs-target="#showMod"><i class="ri-add-line align-bottom me-1"></i> Ajouter Fichier</button>
+                                            <button type="button" onclick="createForm2()" class="btn btn-success add-btn" data-bs-toggle="modal" id="create-btn" data-bs-target="#showMod"><i class="ri-add-line align-bottom me-1"></i> Ajouter EXCEL</button>
+                                            <button type="button" onclick="createForm3()" class="btn btn-info add-btn" data-bs-toggle="modal" id="create-btn" data-bs-target="#showM"><i class="ri-add-line align-bottom me-1"></i> Ajouter PDF</button>
                                             <button type="button" class="btn btn-warning add-btn" data-bs-toggle="modal" id="create-btn" data-bs-target="#downloadModal"><i class="ri-file-download-line  align-bottom me-1"></i> Télécharger </button>
 
                                         </div>
@@ -170,6 +171,66 @@
                                 <div class="mb-3">
                                     <label for="operateur_id" class="form-label">Priorité</label>
                                     <select class="form-control" data-trigger name="priorite" id="priorite3" required>
+                                        @for ($i=$priorite+1;$i>=1 ;$i-- )
+                                            <option value="{{$i}}">{{$i}}</option>
+                                        @endfor
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="operateur_id" class="form-label">Type</label>
+                                    <select class="form-control" data-trigger name="type" id="type" required>
+                                        <option value="decalage">Décalage</option>
+                                        <option value="permutation">Permutation</option>
+                                    </select>
+                                </div>
+                                <h6 class="text-muted">Le type est important au cas où vous choisissez un prioirté existante</h6>
+                                <h6 class="text-muted">Permutation : le formulaire qui à la priorité sélectionné prend la priorité {{$priorite+1}} </h6>
+                            </div>
+                            <div class="modal-footer">
+                                <div class="hstack gap-2 justify-content-end">
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Fermer</button>
+                                    <button type="submit" id="submitDomaineButton" class="btn btn-success" id="add-btn">Ajouter</button>
+                                    <!-- <button type="button" class="btn btn-success" id="edit-btn">Update</button> -->
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade" id="showM" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-light p-3">
+                            <h5 class="modal-title" id="exampleModalLabel"></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="close-modal"></button>
+                        </div>
+                        <form class="tablelist-form" action="/groupeDetail/create" autocomplete="off" method="POST">
+                            @csrf
+                            <div class="modal-body">
+                                <div class="mb-3" id="modal-id" style="display: none;">
+                                    <label for="id-field" class="form-label"></label>
+                                    <input type="text" id="groupe" name="groupe" class="form-control" placeholder="ID" value="{{$groupe_id}}" readonly />
+                                </div>
+                                <input hidden name="type2" value="pdf">
+                                <div class="mb-3">
+                                    <label for="operateur_id" class="form-label">Fichier PDF</label>
+                                    <select class="form-control choices-single" name="form" id="selectActeur2" required>
+                                        <option data-tokens="" value="">Selectionnez un fichier</option>
+                                        @foreach ($pdf as $operateur )
+                                            <option data-tokens="{{$operateur->name}}" value="{{$operateur->id}}">{{strtoupper($operateur->name)}}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="operateur_id" class="form-label">Depend d'autre formulaire/fichier :</label>
+                                    <select class="form-control" data-trigger name="dep" id="dep" required>
+                                            <option value="O">Oui</option>
+                                            <option value="N">Non</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="operateur_id" class="form-label">Priorité</label>
+                                    <select class="form-control" data-trigger name="priorite" id="priorite4" required>
                                         @for ($i=$priorite+1;$i>=1 ;$i-- )
                                             <option value="{{$i}}">{{$i}}</option>
                                         @endfor
@@ -335,6 +396,16 @@
                 selectedState: 'text-primary',
                 },
             });
+            const schema3 =new Choices(document.getElementById("selectActeur2"), {
+                searchResultLimit: 50,
+                classNames: {
+                containerInner: 'choices__inner ',
+                input: 'form-control',
+                item: 'choices__item sa', // Add a custom class here
+                highlightedState: 'text-info',
+                selectedState: 'text-primary',
+                },
+            });
             var urlParams = new URLSearchParams(window.location.search);
             var query = urlParams.get('name') || '';
             $('#searchDomaine').val(query);
@@ -389,6 +460,10 @@
         }
         createForm=function()
         {   $("#priorite").val(@json($priorite));
-        }});
+        }
+        createForm3=function()
+        {   $("#priorite4").val(@json($priorite));
+        }
+    });
     </script>
 @endsection
